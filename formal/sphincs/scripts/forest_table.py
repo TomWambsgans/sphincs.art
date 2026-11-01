@@ -13,8 +13,8 @@ codeword number `t mod 214`. `scripts/forest_certificates.py` imports this modul
 
 The tables mirror the Lean definitions exactly (Fractions):
   fTab, f2Tab    CoverBound/CodewordTables.lean (`sumTL … KT DK`, `sumTL … KT DK2`), `u ≤ 40`
-  P1tab, P2tab   CoverBound/MomentBounds.lean (`P1Q`, `P2Q`), `n ≤ 150`; CoverBound/MomentTable.lean holds their numerators over 2^128 (`P1L`, `P2L`)
-  PHtab          CoverBound/NearMomentTable.lean (`PHQ`), `n ≤ 150`; CoverBound/NearMomentTable.lean holds its numerators over 2^128 (`PHL`)
+  P1tab, P2tab   CoverBound/MomentBounds.lean (`P1Q`, `P2Q`), `n ≤ 255`; CoverBound/MomentTable.lean holds their numerators over 2^128 (`P1L`, `P2L`)
+  PHtab          CoverBound/NearMomentTable.lean (`PHQ`), `n ≤ 255`; CoverBound/NearMomentTable.lean holds its numerators over 2^128 (`PHL`)
 """
 
 from fractions import Fraction as Fr
@@ -36,7 +36,7 @@ CODES = rule_codes()
 
 D = 6        # chains of a forest WOTS key
 UMAX = 40    # fTab, f2Tab
-NMAX = 150   # P1tab, P2tab, PHtab
+NMAX = 255   # P1tab, P2tab, PHtab
 
 
 def digits(code):

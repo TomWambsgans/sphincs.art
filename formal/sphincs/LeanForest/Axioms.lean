@@ -1,7 +1,7 @@
 import LeanForest
 
 /-!
-Axiom guards. The `#print axioms` below pin the main theorem, the 40 size and cost theorems of
+Axiom guards. The `#print axioms` below pin the main theorems (127 and 100 bits), the 40 size and cost theorems of
 `Configurations` and the theorems the documentation cites. The last command checks
 every declaration of every `LeanForest` module (`LeanForest.lean` imports all of them) and fails if
 one depends on an axiom other than `propext`, `Classical.choice` and `Quot.sound`, such as the
@@ -11,6 +11,10 @@ one depends on an axiom other than `propext`, `Classical.choice` and `Quot.sound
 /-- info: 'LeanForest.requestedSecurity' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in
 #print axioms LeanForest.requestedSecurity
+
+/-- info: 'LeanForest.requestedSecurity100' depends on axioms: [propext, Classical.choice, Quot.sound] -/
+#guard_msgs (whitespace := lax) in
+#print axioms LeanForest.requestedSecurity100
 
 /-- info: 'LeanForest.Configurations.blake2s_h20_pruned' depends on axioms: [propext, Classical.choice, Quot.sound] -/
 #guard_msgs (whitespace := lax) in

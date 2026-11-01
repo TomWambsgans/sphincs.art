@@ -98,7 +98,8 @@ P1, P2, PH = forest_table.moment_tabs(*forest_table.f_tabs())
 for _name, _tab in (('P1L', P1), ('P2L', P2), ('PHL', PH)):
     assert forest_table.parse_list(open(forest_table.lean_path(_name)).read(), forest_table.FILES[_name][1]) == \
         [x * 2 ** 128 for x in _tab], '%s differs from the Lean source: run scripts/forest_table.py write' % _name
-assert len(P1) == 151 and len(P2) == 151 and len(PH) == 151
+NMAX = forest_table.NMAX   # the tables cover n <= NMAX (255)
+assert len(P1) == NMAX + 1 and len(P2) == NMAX + 1 and len(PH) == NMAX + 1
 
 def getD(lst, n): return lst[n] if 0 <= n < len(lst) else Fr(0)
 
@@ -186,7 +187,7 @@ def checkOptF(b, t, o):
     if not (0 < o.c1 and 0 < o.th and 0 <= o.cthr and o.th * o.c1 < 2 ** o.s): return False
     if not expUp(o.th * o.c1, o.s, t.P) <= o.eC: return False
     if not (o.eC - 1 - o.th * o.c1) / o.c1 ** 2 <= o.A2: return False
-    if not (n1 <= 150 and len(o.gt) == n1 + 1 and len(o.ht) == n1 + 1): return False
+    if not (n1 <= NMAX and len(o.gt) == n1 + 1 and len(o.ht) == n1 + 1): return False
     if not (checkLeaf(o.gt, o.Jg) and checkLeaf(o.ht, o.Jh)): return False
     for n in range(n1 + 1):
         if not gBound(o, n) <= o.gt[n]: return False
@@ -280,7 +281,7 @@ def make_optN(b, t):
 
 def checkOptN(t, o):
     n1 = t.n1
-    if not (n1 <= 150 and len(o.nt) == n1 + 1 and checkLeaf(o.nt, o.Jn)): return False
+    if not (n1 <= NMAX and len(o.nt) == n1 + 1 and checkLeaf(o.nt, o.Jn)): return False
     for n in range(n1 + 1):
         if not nBound(n) <= o.nt[n]: return False
     if not 2 * COORDS * KQ <= o.nt[n1] + o.Jn: return False
@@ -435,6 +436,83 @@ def certify(b, N, lx, verbose=True):
         print('  covers stop at 2^%.4f: the heavy range is not certified' % math.log2(qstart - 1), flush=True)
     return dict(h=TOTAL, shape=SHAPE, T=COORDS, d=num_layers(), K=kcredit(b), b=b, N=N, lx=lx, qh=qh, rho=rho, t=t, o=o,
                 on=on, covers=covers, heavy=heavy, complete=complete)
+
+# ---------------- fewer bits: the small route alone (Certificates/ClosingBits.lean) ----------------
+
+def checkSmallS(b, N, qh, bits, rho, cthr, B, c):
+    """ForestPotential.checkSmallS: checkSmallF with the right-hand side 2^(128 - bits), bits <= 127, qh >= 2^bits - 1"""
+    x = Fr(qh, 2 ** 128)
+    rate = Fr(N * LIT, 2 ** b * 2 ** 15)
+    conds = [bits <= 127, 2 ** bits <= qh + 1, Fr(3, 2) <= rho, rho <= 2, 1 + 4032 * (2 - rho) * x <= rho,
+             1 + 66 * x <= rho, 64 * x <= 1, qh <= 2 ** 127, N <= 2 ** 70, cthr <= rho / 2 ** 128, 0 <= B, 0 <= c,
+             rate <= rho - 1 - x]
+    return all(conds) and small_lhs(b, N, qh, rho, B, c) <= 2 ** (128 - bits)
+
+def log_expLow(u, J):
+    """log of the truncated exponential sum_{j <= J} u^j / j! that expLow bounds from below"""
+    if u <= 0:
+        return 0.0
+    terms = [j * math.log(u) - math.lgamma(j + 1) for j in range(J + 1)]
+    m = max(terms)
+    return m + math.log(sum(math.exp(x - m) for x in terms))
+
+def best_opt_bits(b, t, cthr):
+    """float search of the option (c1, th) minimizing B, mirroring optB: the bound tables are convexified
+    (convexify) and the Chernoff term divides by the truncated exponential expLow(th cthr, J)"""
+    import numpy as np
+    from scipy.stats import poisson
+    from scipy.special import gammaln
+    L, KQf, n1, mu = 2 ** b, 2.0 ** -TOTAL, t.n1, float(t.mu)
+    n = np.arange(n1 + 1)
+    ps, tail = poisson.pmf(n, mu), poisson.sf(n1, mu)
+    m1 = KQf * np.array([float(P1[i]) for i in n]) ** COORDS
+    m2 = KQf * KQf * np.array([float(P2[i]) for i in n]) ** COORDS
+    LC = np.array([x / 4 for x in range(-4 * 180, -4 * 60)])
+    KS = np.array([x / 4 for x in range(-40, 12)])
+    C1 = 2.0 ** np.repeat(LC, len(KS))
+    TH = 2.0 ** np.tile(KS, len(LC)) / (L * C1)
+    U = TH * C1
+    EC1 = np.expm1(U)
+    A2 = (EC1 - U) / C1 ** 2
+    G = np.minimum(m1[None, :], m2[None, :] / (4 * C1[:, None]))
+    Hh = np.minimum(EC1[:, None], TH[:, None] * m1[None, :] + A2[:, None] * m2[None, :])
+    for X in (G, Hh):                      # convexify along n, as the exact tables are
+        for k in range(1, n1 + 1):
+            X[:, k] = np.maximum(X[:, k], X[:, k - 1]) if k == 1 else np.maximum(X[:, k], 2 * X[:, k - 1] - X[:, k - 2])
+    Eg = (G * ps).sum(axis=1) + tail * np.maximum(KQf, G[:, -1]) * 3
+    Ee = (Hh * ps).sum(axis=1) + tail * np.maximum(EC1, Hh[:, -1]) * 3
+    u = TH * float(cthr)
+    jj = np.arange(t.J + 1)
+    lt = jj[None, :] * np.log(np.maximum(u, 1e-300))[:, None] - gammaln(jj + 1)[None, :]
+    m = lt.max(axis=1)
+    lexp = m + np.log(np.exp(lt - m[:, None]).sum(axis=1))
+    B = L * Eg + np.exp(np.minimum(700, L * np.log1p(Ee) - 1 - np.log(TH) - lexp))
+    k = int(np.argmin(B))
+    return float(B[k]), float(C1[k]), float(TH[k])
+
+def certify_bits(b, N, bits=100, verbose=True):
+    """the small-route certificate at `bits` bits: qh = 2^bits, tables up to n1 = NMAX"""
+    qh = 2 ** bits
+    t = make_poisT(b, N, qh, n1=NMAX)
+    assert checkPT(t) and checkRate(b, N, qh, t)
+    rho = choose_rho(qh)
+    cthr = rho / 2 ** 128
+    _, c1, th = best_opt_bits(b, t, cthr)
+    c1q, thq = dyadic(c1, 24), dyadic(th, 24)
+    s = max(0, math.ceil(math.log2(float(thq * c1q))) + 12)
+    o = fill_opt(b, t, c1q, thq, s, cthr)
+    assert checkOptF(b, t, o)
+    on = make_optN(b, t)
+    assert checkOptN(t, on)
+    c = (2 ** b * on.En) / 2
+    lhs = small_lhs(b, N, qh, rho, o.B, c)
+    ok = checkSmallS(b, N, qh, bits, rho, o.cthr, o.B, c)
+    if verbose:
+        print('H %d %s T %d b %d N %d bits %d: lhs / 2^%d = %.6f %s' % (TOTAL, SHAPE, COORDS, b, N, bits, 128 - bits,
+              float(lhs / 2 ** (128 - bits)), 'OK' if ok else 'FAIL'), flush=True)
+    if not ok:
+        return None
+    return dict(h=TOTAL, shape=SHAPE, T=COORDS, d=num_layers(), b=b, N=N, bits=bits, qh=qh, rho=rho, t=t, o=o, on=on)
 
 # ---------------- Lean output ----------------
 
@@ -762,6 +840,173 @@ def configs():
                 out.append((h, 'layered', h, N, lx, T))
     return out
 
+
+# ---------------- Lean output at fewer bits ----------------
+
+def sig4(n):
+    """n rounded down to four significant digits"""
+    e = max(0, len(str(n)) - 4)
+    return n // 10 ** e * 10 ** e
+
+def maxn_bits(h, shape, b, T, bits=100, lo=None, hi=None):
+    """the largest N certified at `bits` bits (bisection to 1 part in 10^5), rounded down to four digits"""
+    set_config(h, shape, T)
+    att = attack_bits(h, shape, b, T, bits)
+    lo, hi = int(0.9 * att) if lo is None else lo, int(1.01 * att) if hi is None else hi
+    ok = lambda N: certify_bits(b, N, bits, verbose=False) is not None
+    assert ok(lo), 'not certified at the lower end %d' % lo
+    while hi - lo > max(1, lo // 100000):
+        mid = (lo + hi) // 2
+        lo, hi = (mid, hi) if ok(mid) else (lo, mid)
+    return sig4(lo)
+
+def attack_bits(h, shape, b, T, bits):
+    """the cover attack's lifetime at `bits` bits: E[Y] = 2^-bits per digest query, Poisson loads (forest_attack.py)"""
+    import forest_attack as fa
+    import numpy as np
+    cnt = np.zeros((5,) * 6, dtype=np.int64)
+    for w in fa.tables('rule'): cnt[tuple(w)] += 1
+    fa.NMAX = 800
+    Pn = fa.tree_P(fa.f_of_counts(cnt, 160), 4, 2, 3)
+    fa.TOTAL = h
+    lo, hi = 1e-3, 400.0
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        if fa.log2_forge(Pn, T, mid, h if shape == 'layered' else b) <= -bits: lo = mid
+        else: hi = mid
+    return lo * 2 ** (h if shape == 'layered' else b)
+
+BITS_HEADER = """import LeanForest.Certificates.Build
+import LeanForest.Certificates.ClosingBits
+
+/-! Certificates of the forest lifetimes at %d bits, total height %d (generated by
+`scripts/forest_certificates.py emit-bits`, checked by the kernel with `decide +kernel`, exact rational
+arithmetic, no `native_decide`). A target of %d bits constrains only the budgets `q < 2^%d`, all of them
+small: for each configuration, a Poisson table up to `n1 = %d`, the small-route option at baseline
+`ρ / 2^128`, the near certificate and `checkSmallS` at `qh = 2^%d` (`ClosingBits.lean`). The tables, the
+options and the near certificates are rebuilt from their scalars (`poisOf`, `buildOpt`, `buildOptN`) and
+pass their checkers by construction (`Build.lean`). A layered key of 8 coordinates uses the full key's
+certificate: the small route does not depend on key generation. -/
+
+namespace LeanForest.Security.H0
+
+set_option maxRecDepth 1000000
+set_option maxHeartbeats 0
+-- one check at a time: with asynchronous elaboration the memory of the finished checks is kept
+set_option Elab.async false
+"""
+
+def emit_bits(certs, path, bits):
+    out = [BITS_HEADER % (bits, certs[0]['h'], bits, bits, NMAX, bits)]
+    for c in certs:
+        if c.get('reuse'):
+            continue
+        set_config(c['h'], c['shape'], c['T'])
+        b, N, H, T = c['b'], c['N'], c['h'], c['T']
+        tag = '%d_%s' % (bits, tag_of(c))
+        out.append('/-- Poisson table, %s, %d bits. -/' % (describe(c), bits))
+        out.append('def tab%s : PoisT := %s\n' % (tag, lean_tab(c['t'])))
+        out.append('theorem tab%s_ok : checkPT tab%s = true := checkPT_poisOf (by decide +kernel)\n' % (tag, tag))
+        out.append('theorem rate%s_ok : checkRate %d %d %d %d tab%s = true := by decide +kernel\n'
+                   % (tag, H, b, N, c['qh'], tag))
+        out.append('/-- The small-route option at baseline `ρ / 2^128`. -/')
+        out.append('def small%s : OptF := %s\n' % (tag, lean_opt(b, 'tab' + tag, c['t'], c['o'])))
+        out.append('theorem small%s_ok : checkOptF %d %d %d tab%s small%s = true :=\n    checkOptF_build (by decide +kernel)\n'
+                   % (tag, H, b, T, tag, tag))
+        out.append('/-- The near certificate. -/')
+        out.append('def near%s : OptN := %s\n' % (tag, lean_optN(b, 'tab' + tag, c['t'], c['on'])))
+        out.append('theorem near%s_ok : checkOptN %d %d tab%s near%s = true :=\n    checkOptN_build (by decide +kernel)\n'
+                   % (tag, H, T, tag, tag))
+        out.append('/-- The plain rate `ρ`. -/')
+        out.append('def rho%s : ℚ := %s\n' % (tag, q(c['rho'])))
+        out.append('theorem check%s_ok : ForestPotential.checkSmallS %d %d %d %d %d rho%s small%s.cthr small%s.B\n'
+                   '    ((2 ^ %d * near%s.En : ℚ) / 2) = true := by decide +kernel\n'
+                   % (tag, H, b, N, c['qh'], bits, tag, tag, tag, b, tag))
+    out.append('end LeanForest.Security.H0\n')
+    open(path, 'w').write('\n'.join(out))
+
+LIFETIMES_BITS_HEADER = """%s
+
+/-! **Proofs of the lifetimes at %d bits** (generated by `scripts/forest_certificates.py emit-bits`): one
+theorem per configuration, `ForestPotential.det_bitsS` (`Certificates/ClosingBits.lean`) applied to the
+configuration's small-route certificate (`Certificates/Bits%d/H*.lean`). `Main.lean` states each of them
+again and proves it with the theorem here. -/
+
+namespace LeanForest.Lifetimes
+
+open Security ForestPotential
+"""
+
+def emit_lifetimes_bits(certs, path, bits):
+    heights = sorted({c['h'] for c in certs})
+    out = [LIFETIMES_BITS_HEADER % ('\n'.join('import LeanForest.Certificates.Bits%d.H%d' % (bits, h) for h in heights),
+                                    bits, bits)]
+    for c in certs:
+        b, N, H, T = c['b'], c['N'], c['h'], c['T']
+        bt = '%d_%s' % (bits, tag_of(c['base']))
+        att = attack_bits(H, c['shape'], b, T, bits)
+        out.append("/-- %s, %d bits (%.2f%% of the cover attack's %.5g at %d bits). -/"
+                   % (describe(c).capitalize(), bits, 100.0 * N / att, att, bits))
+        out.append('theorem %s_bits%d : SecurityBits (%s) %d :=' % (pname(c), bits, lean_params(c), bits))
+        out.append('  @det_bitsS (%s) (by decide) %d %d %d %d %d (by decide) (by decide) (by decide) (by decide) %d\n'
+                   '    H0.rho%s H0.tab%s H0.small%s H0.near%s H0.tab%s_ok H0.rate%s_ok H0.small%s_ok\n'
+                   '    H0.near%s_ok H0.check%s_ok\n'
+                   % (lean_params(c), H, b, T, N, bits, c['qh'], bt, bt, bt, bt, bt, bt, bt, bt, bt))
+    out.append('end LeanForest.Lifetimes\n')
+    open(path, 'w').write('\n'.join(out))
+
+# Limits at fewer bits, by bits: (h, shape, b, T) -> N, the largest N certified by `maxn-bits` (bisection),
+# rounded down to four significant digits. A layered key of 8 coordinates has the full key's limit.
+PARAMS_BITS = {100: {
+    (20, 'pruned', 20, 8): 59850000,
+    (20, 'pruned', 14, 8): 1135000,
+    (20, 'pruned', 13, 8): 585900,
+    (20, 'pruned', 12, 8): 302300,
+    (20, 'pruned', 10, 8): 80480,
+    (20, 'pruned', 8, 8): 21410,
+    (22, 'pruned', 22, 8): 239400000,
+    (22, 'pruned', 20, 8): 63890000,
+    (22, 'pruned', 14, 8): 1209000,
+    (22, 'pruned', 13, 8): 624000,
+    (22, 'pruned', 12, 8): 321900,
+    (22, 'pruned', 10, 8): 85650,
+    (22, 'pruned', 8, 8): 22770,
+    (24, 'pruned', 24, 8): 957700000,
+    (24, 'pruned', 20, 8): 68150000,
+    (24, 'pruned', 14, 8): 1287000,
+    (24, 'pruned', 13, 8): 664200,
+    (24, 'pruned', 12, 8): 342600,
+    (24, 'pruned', 10, 8): 91100,
+    (24, 'pruned', 8, 8): 24210,
+    (24, 'layered', 24, 6): 303300000,
+    (24, 'layered', 24, 7): 603400000,
+    (26, 'pruned', 26, 8): 3830000000,
+    (26, 'pruned', 20, 8): 72650000,
+    (26, 'pruned', 14, 8): 1370000,
+    (26, 'pruned', 13, 8): 706700,
+    (26, 'pruned', 12, 8): 364400,
+    (26, 'pruned', 10, 8): 96860,
+    (26, 'pruned', 8, 8): 25730,
+    (28, 'pruned', 28, 8): 15320000000,
+    (28, 'pruned', 20, 8): 77400000,
+    (28, 'pruned', 14, 8): 1457000,
+    (28, 'pruned', 13, 8): 751500,
+    (28, 'pruned', 12, 8): 387400,
+    (28, 'pruned', 10, 8): 102900,
+    (28, 'pruned', 8, 8): 27340,
+}}
+
+def configs_bits(bits):
+    """(h, shape, b, T, N) of every configuration at `bits` bits, in the order of `configs`"""
+    out = []
+    for (h, shape, b, _, _, T) in configs():
+        key = (h, shape, b, T)
+        N = PARAMS_BITS[bits].get(key)
+        if N is None and shape == 'layered' and T == 8:
+            N = PARAMS_BITS[bits].get((h, 'pruned', h, 8))
+        out.append((h, shape, b, T, N))
+    return out
+
 def certify_config(h, shape, b, N, lx, verbose=True, T=8):
     set_config(h, shape, T)
     if shape == 'layered':
@@ -824,6 +1069,36 @@ if __name__ == '__main__':
             print('lx %s: rho %.6f 2^128B %.5f coin %.5f near %.5f lhs %.6f rate ok %s' % (
                 lx, float(rho), float(2 ** 128 * o.B), float(Fr((2 * scanMb(b) - 1) * qh, scanMb(b) * 2 ** 129)),
                 float(near), float(small_lhs(b, N, qh, rho, o.B, c)), rate <= rho - 1 - x), flush=True)
+    elif cmd == 'maxn-bits':
+        # maxn-bits BITS H SHAPE B [T]: the largest N at BITS bits, four significant digits
+        bits, h, shape, b = int(sys.argv[2]), int(sys.argv[3]), sys.argv[4], int(sys.argv[5])
+        T = int(sys.argv[6]) if len(sys.argv) > 6 else 8
+        N = maxn_bits(h, shape, b, T, bits)
+        att = attack_bits(h, shape, b, T, bits)
+        print('bits %d H %d %s b %d T %d: N %d (%.3f%% of the attack %.6g)' % (bits, h, shape, b, T, N, 100.0 * N / att, att), flush=True)
+    elif cmd == 'emit-bits':
+        # emit-bits BITS: write LeanForest/Certificates/BitsBITS/H*.lean and LeanForest/LifetimesBITS.lean
+        bits = int(sys.argv[2])
+        certs, full = [], {}
+        for (h, shape, b, T, N) in configs_bits(bits):
+            assert N is not None, ('no limit at %d bits' % bits, h, shape, b, T)
+            if shape == 'layered' and T == 8 and (h, h) in full and full[(h, h)]['N'] == N:
+                c = dict(full[(h, h)]); c.update(shape='layered', d=3, reuse=True, base=full[(h, h)])
+                certs.append(c)
+                continue
+            set_config(h, shape, T)
+            c = certify_bits(b, N, bits)
+            assert c is not None, (h, shape, b, T, N)
+            c['base'] = c
+            if shape == 'pruned' and b == h:
+                full[(h, h)] = c
+            certs.append(c)
+        d = os.path.join(ROOT, 'LeanForest', 'Certificates', 'Bits%d' % bits)
+        os.makedirs(d, exist_ok=True)
+        for h in sorted({c['h'] for c in certs}):
+            emit_bits([c for c in certs if c['h'] == h], os.path.join(d, 'H%d.lean' % h), bits)
+        emit_lifetimes_bits(certs, os.path.join(ROOT, 'LeanForest', 'Lifetimes%d.lean' % bits), bits)
+        print('written')
     elif cmd == 'emit':
         certs = []
         for (h, shape, b, N, lx, T) in configs():

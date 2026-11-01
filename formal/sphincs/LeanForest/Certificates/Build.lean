@@ -276,11 +276,11 @@ theorem getD_zipTab {α β γ : Type*} {n1 n : ℕ} {f : α → β → γ} {l : 
   simp [zipTab]
 
 set_option maxRecDepth 100000 in
-theorem length_P1L : P1L.length = 151 := rfl
+theorem length_P1L : P1L.length = 256 := rfl
 set_option maxRecDepth 100000 in
-theorem length_P2L : P2L.length = 151 := rfl
+theorem length_P2L : P2L.length = 256 := rfl
 set_option maxRecDepth 100000 in
-theorem length_PHL : PHL.length = 151 := rfl
+theorem length_PHL : PHL.length = 256 := rfl
 
 theorem getD_tab {L : List ℕ} {T : List ℚ} (hT : L.map (fun x : ℕ => (x : ℚ) / 2 ^ 128) = T) {n : ℕ}
     (hn : n < L.length) : T.getD n 0 = (L.getD n 0 : ℚ) / 2 ^ 128 := by
@@ -310,7 +310,7 @@ def nZ (H T n1 : ℕ) : List ℤ :=
   zipTab n1 (fun c x : ℕ => cdivZ (((2 * T * c * x ^ (T - 1) : ℕ) : ℤ) * 2 ^ 191) (p2 (H + 128 + 128 * (T - 1))))
     PHL P1L
 
-theorem gZ_bound {H T n1 n : ℕ} {o : OptF} (hc : 0 < o.c1) (hn1 : n1 ≤ 150) (hn : n < n1 + 1) :
+theorem gZ_bound {H T n1 n : ℕ} {o : OptF} (hc : 0 < o.c1) (hn1 : n1 ≤ 255) (hn : n < n1 + 1) :
     gBound H T o n ≤ ((gZ H T n1 o.c1).getD n 0 : ℚ) / 2 ^ 191 := by
   have l1 : n1 + 1 ≤ P1L.length := by rw [length_P1L]; omega
   have l2 : n1 + 1 ≤ P2L.length := by rw [length_P2L]; omega
@@ -328,7 +328,7 @@ theorem gZ_bound {H T n1 n : ℕ} {o : OptF} (hc : 0 < o.c1) (hn1 : n1 ≤ 150) 
     have : (0 : ℚ) < o.c1.den := by exact_mod_cast o.c1.den_pos
     field_simp; ring
 
-theorem hZ_bound {H T n1 n : ℕ} {o : OptF} {E : ℤ} (hE : o.eC - 1 ≤ (E : ℚ) / 2 ^ 128) (hn1 : n1 ≤ 150)
+theorem hZ_bound {H T n1 n : ℕ} {o : OptF} {E : ℤ} (hE : o.eC - 1 ≤ (E : ℚ) / 2 ^ 128) (hn1 : n1 ≤ 255)
     (hn : n < n1 + 1) : hBound H T o n ≤ ((hZ H T n1 o.θ o.A2 E).getD n 0 : ℚ) / 2 ^ 128 := by
   have l1 : n1 + 1 ≤ P1L.length := by rw [length_P1L]; omega
   have l2 : n1 + 1 ≤ P2L.length := by rw [length_P2L]; omega
@@ -344,7 +344,7 @@ theorem hZ_bound {H T n1 n : ℕ} {o : OptF} {E : ℤ} (hE : o.eC - 1 ≤ (E : �
   have : (0 : ℚ) < o.A2.den := by exact_mod_cast o.A2.den_pos
   field_simp; ring
 
-theorem nZ_bound {H T n1 n : ℕ} (hn1 : n1 ≤ 150) (hn : n < n1 + 1) :
+theorem nZ_bound {H T n1 n : ℕ} (hn1 : n1 ≤ 255) (hn : n < n1 + 1) :
     nBound H T n ≤ ((nZ H T n1).getD n 0 : ℚ) / 2 ^ 191 := by
   have l1 : n1 + 1 ≤ PHL.length := by rw [length_PHL]; omega
   have l2 : n1 + 1 ≤ P1L.length := by rw [length_P1L]; omega
@@ -436,7 +436,7 @@ def buildOpt (H b T : ℕ) (t : PoisT) (c1 θ : ℚ) (s : ℕ) (cthr : ℚ) : Op
 /-- What `checkOptF` needs beyond the construction. -/
 def buildOk (t : PoisT) (o : OptF) : Bool :=
   decide (0 < o.c1) && decide (0 < o.θ) && decide (0 ≤ o.cthr) && decide (o.θ * o.c1 < 2 ^ o.s) &&
-    decide (1 ≤ t.n1) && decide (t.n1 ≤ 150) && decide (0 ≤ o.gt.getD 0 0) && decide (0 ≤ o.ht.getD 0 0) &&
+    decide (1 ≤ t.n1) && decide (t.n1 ≤ 255) && decide (0 ≤ o.gt.getD 0 0) && decide (0 ≤ o.ht.getD 0 0) &&
     decide (0 ≤ o.Eg) && decide (0 ≤ o.Ee)
 
 /-- **A built option passes `checkOptF`.** -/
@@ -496,7 +496,7 @@ def buildOptN (H b T : ℕ) (t : PoisT) : OptN :=
 
 /-- What `checkOptN` needs beyond the construction. -/
 def buildOkN (t : PoisT) (o : OptN) : Bool :=
-  decide (1 ≤ t.n1) && decide (t.n1 ≤ 150) && decide (0 ≤ o.nt.getD 0 0)
+  decide (1 ≤ t.n1) && decide (t.n1 ≤ 255) && decide (0 ≤ o.nt.getD 0 0)
 
 /-- **A built near certificate passes `checkOptN`.** -/
 theorem checkOptN_build {H b T : ℕ} {t : PoisT} (h : buildOkN t (buildOptN H b T t) = true) :

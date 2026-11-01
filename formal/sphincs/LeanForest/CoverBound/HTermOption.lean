@@ -49,7 +49,7 @@ def checkOptF (H b T : ℕ) (t : PoisT) (o : OptF) : Bool :=
   decide (0 < o.c1) && decide (0 < o.θ) && decide (0 ≤ o.cthr) && decide (o.θ * o.c1 < 2 ^ o.s) &&
     decide (expUp (o.θ * o.c1) o.s t.P ≤ o.eC) &&
     decide ((o.eC - 1 - o.θ * o.c1) / o.c1 ^ 2 ≤ o.A2) &&
-    decide (t.n1 ≤ 150) && decide (o.gt.length = t.n1 + 1) && decide (o.ht.length = t.n1 + 1) &&
+    decide (t.n1 ≤ 255) && decide (o.gt.length = t.n1 + 1) && decide (o.ht.length = t.n1 + 1) &&
     checkLeaf o.gt o.Jg && checkLeaf o.ht o.Jh &&
     decide (∀ n < t.n1 + 1, gBound H T o n ≤ o.gt.getD n 0) &&
     decide (∀ n < t.n1 + 1, hBound H T o n ≤ o.ht.getD n 0) &&
@@ -64,7 +64,7 @@ def checkOptF (H b T : ℕ) (t : PoisT) (o : OptF) : Bool :=
 
 theorem checkOptF_parts {H b T : ℕ} {t : PoisT} {o : OptF} (h : checkOptF H b T t o = true) :
     0 < o.c1 ∧ 0 < o.θ ∧ 0 ≤ o.cthr ∧ o.θ * o.c1 < 2 ^ o.s ∧ expUp (o.θ * o.c1) o.s t.P ≤ o.eC ∧
-      (o.eC - 1 - o.θ * o.c1) / o.c1 ^ 2 ≤ o.A2 ∧ t.n1 ≤ 150 ∧ o.gt.length = t.n1 + 1 ∧ o.ht.length = t.n1 + 1 ∧
+      (o.eC - 1 - o.θ * o.c1) / o.c1 ^ 2 ≤ o.A2 ∧ t.n1 ≤ 255 ∧ o.gt.length = t.n1 + 1 ∧ o.ht.length = t.n1 + 1 ∧
       checkLeaf o.gt o.Jg = true ∧ checkLeaf o.ht o.Jh = true ∧
       (∀ n < t.n1 + 1, gBound H T o n ≤ o.gt.getD n 0) ∧ (∀ n < t.n1 + 1, hBound H T o n ≤ o.ht.getD n 0) ∧
       κQ H ≤ o.gt.getD t.n1 0 + o.Jg ∧ o.eC - 1 ≤ o.ht.getD t.n1 0 + o.Jh ∧
@@ -129,7 +129,7 @@ theorem avgN_gS_le {H b T : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b)
     {t : PoisT} {o : OptF} (ho : checkOptF H b T t o = true) (n : ℕ) :
     avgN (gS (o.c1 : ℝ)) n 0 ≤ ENNReal.ofReal (leafQ o.gt o.Jg n : ℝ) := by
   subst hT
-  obtain ⟨hc1, -, -, -, -, -, h150, hgl, -, hlg, -, hgb, -, hgend, -⟩ := checkOptF_parts ho
+  obtain ⟨hc1, -, -, -, -, -, h255, hgl, -, hlg, -, hgb, -, hgend, -⟩ := checkOptF_parts ho
   have hc1' : (0 : ℝ) < (o.c1 : ℝ) := by exact_mod_cast hc1
   have hκ := κE_toReal H b hH hb
   by_cases hn : n < t.n1 + 1
@@ -192,7 +192,7 @@ theorem avgN_hS_le {H b T : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b)
     {t : PoisT} {o : OptF} (ho : checkOptF H b T t o = true) (n : ℕ) :
     avgN (hS (o.c1 : ℝ) (o.θ : ℝ)) n 0 ≤ 1 + ENNReal.ofReal (leafQ o.ht o.Jh n : ℝ) := by
   subst hT
-  obtain ⟨hc1, hθ, -, hs, heC, hA2, h150, -, hhl, -, hlh, -, hhb, -, hhend, -⟩ := checkOptF_parts ho
+  obtain ⟨hc1, hθ, -, hs, heC, hA2, h255, -, hhl, -, hlh, -, hhb, -, hhend, -⟩ := checkOptF_parts ho
   have hc1' : (0 : ℝ) < (o.c1 : ℝ) := by exact_mod_cast hc1
   have hθ' : (0 : ℝ) < (o.θ : ℝ) := by exact_mod_cast hθ
   have hκ := κE_toReal H b hH hb

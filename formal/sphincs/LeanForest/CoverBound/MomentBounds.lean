@@ -95,27 +95,27 @@ def binQ (n i : ℕ) (a b : ℚ) : ℚ := ((pascal n).getD i 0 : ℚ) * a ^ i * 
 /-- The bound of `μ_i`. -/
 def μQ (i : ℕ) : ℚ := rup (((List.range (i + 1)).map fun u => binQ i u (1 / 8) (7 / 8) * fQ u).sum) 128
 
-/-- The bounds of `μ_i`, `i ≤ 150`. -/
-def μL : List ℚ := (List.range 151).map μQ
+/-- The bounds of `μ_i`, `i ≤ 255`. -/
+def μL : List ℚ := (List.range 256).map μQ
 
 /-- The bound of `Σ_u C(s,u) f(u) f(s-u)`. -/
 def hQ (s : ℕ) : ℚ :=
   rup (((List.range (s + 1)).map fun u => ((pascal s).getD u 0 : ℚ) * fQ u * fQ (s - u)).sum) 128
 
-def hL : List ℚ := (List.range 151).map hQ
+def hL : List ℚ := (List.range 256).map hQ
 
 /-- The bound of `ν_i`. -/
 def νQ (i : ℕ) : ℚ :=
   rup (1 / 8 * ((List.range (i + 1)).map fun u => binQ i u (1 / 8) (7 / 8) * f2Q u).sum +
     7 / 8 * ((List.range (i + 1)).map fun s => binQ i s (1 / 8) (6 / 8) * hL.getD s 0).sum) 128
 
-def νL : List ℚ := (List.range 151).map νQ
+def νL : List ℚ := (List.range 256).map νQ
 
 /-- The bound of `Σ_i C(s,i) μ_i^2 μ_(s-i)^2`. -/
 def gQ (s : ℕ) : ℚ :=
   rup (((List.range (s + 1)).map fun i => ((pascal s).getD i 0 : ℚ) * μL.getD i 0 ^ 2 * μL.getD (s - i) 0 ^ 2).sum) 128
 
-def gL : List ℚ := (List.range 151).map gQ
+def gL : List ℚ := (List.range 256).map gQ
 
 /-- The bound of `Ψ1(n)`. -/
 def P1Q (n : ℕ) : ℚ :=
@@ -159,12 +159,12 @@ theorem μR_bounds (i : ℕ) : 0 ≤ μR i ∧ μR i ≤ (μQ i : ℝ) := by
   push_cast
   exact mul_le_mul_of_nonneg_left (fR_le_fQ u) (by positivity)
 
-theorem μL_getD (i : ℕ) (hi : i ≤ 150) : μL.getD i 0 = μQ i := getD_map_range μQ 0 151 i (by omega)
+theorem μL_getD (i : ℕ) (hi : i ≤ 255) : μL.getD i 0 = μQ i := getD_map_range μQ 0 256 i (by omega)
 
 
-theorem hL_getD (s : ℕ) (hs : s ≤ 150) : hL.getD s 0 = hQ s := getD_map_range hQ 0 151 s (by omega)
-theorem νL_getD (i : ℕ) (hi : i ≤ 150) : νL.getD i 0 = νQ i := getD_map_range νQ 0 151 i (by omega)
-theorem gL_getD (s : ℕ) (hs : s ≤ 150) : gL.getD s 0 = gQ s := getD_map_range gQ 0 151 s (by omega)
+theorem hL_getD (s : ℕ) (hs : s ≤ 255) : hL.getD s 0 = hQ s := getD_map_range hQ 0 256 s (by omega)
+theorem νL_getD (i : ℕ) (hi : i ≤ 255) : νL.getD i 0 = νQ i := getD_map_range νQ 0 256 i (by omega)
+theorem gL_getD (s : ℕ) (hs : s ≤ 255) : gL.getD s 0 = gQ s := getD_map_range gQ 0 256 s (by omega)
 
 theorem hR_le (s : ℕ) :
     ∑ u ∈ Finset.range (s + 1), (s.choose u : ℝ) * fR u * fR (s - u) ≤ (hQ s : ℝ) := by
@@ -183,7 +183,7 @@ theorem hR_le (s : ℕ) :
         mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left h3 hc) h2.1
     _ ≤ _ := mul_le_mul_of_nonneg_left h4 (mul_nonneg hc (fQ_nonneg u))
 
-theorem νR_bounds (i : ℕ) (hi : i ≤ 150) : 0 ≤ νR i ∧ νR i ≤ (νQ i : ℝ) := by
+theorem νR_bounds (i : ℕ) (hi : i ≤ 255) : 0 ≤ νR i ∧ νR i ≤ (νQ i : ℝ) := by
   unfold νR
   rw [νeqR_eq, νneR_eq]
   constructor
@@ -203,7 +203,7 @@ theorem νR_bounds (i : ℕ) (hi : i ≤ 150) : 0 ≤ νR i ∧ νR i ≤ (νQ i
     push_cast
     exact mul_le_mul_of_nonneg_left (hR_le s) (by positivity)
 
-theorem gR_le (s : ℕ) (hs : s ≤ 150) :
+theorem gR_le (s : ℕ) (hs : s ≤ 255) :
     ∑ i ∈ Finset.range (s + 1), (s.choose i : ℝ) * μR i ^ 2 * μR (s - i) ^ 2 ≤ (gQ s : ℝ) := by
   unfold gQ
   refine rup_ge_real ?_ 128
@@ -221,7 +221,7 @@ theorem gR_le (s : ℕ) (hs : s ≤ 150) :
   · exact h2.2
 
 /-- **The first moment bound.** -/
-theorem Ψ1R_le (n : ℕ) (hn : n ≤ 150) : Ψ1R n ≤ (P1Q n : ℝ) := by
+theorem Ψ1R_le (n : ℕ) (hn : n ≤ 255) : Ψ1R n ≤ (P1Q n : ℝ) := by
   rw [Ψ1R_eq]
   unfold P1Q
   refine rup_ge_real ?_ 128
@@ -237,7 +237,7 @@ theorem Ψ1R_le (n : ℕ) (hn : n ≤ 150) : Ψ1R n ≤ (P1Q n : ℝ) := by
   · exact h1.2
 
 /-- **The second moment bound.** -/
-theorem Ψ2R_le (n : ℕ) (hn : n ≤ 150) : Ψ2R n ≤ (P2Q n : ℝ) := by
+theorem Ψ2R_le (n : ℕ) (hn : n ≤ 255) : Ψ2R n ≤ (P2Q n : ℝ) := by
   rw [Ψ2R_eq]
   unfold P2Q
   refine rup_ge_real ?_ 128
@@ -362,10 +362,10 @@ theorem pascal_conv_sum (s e e' : ℕ) (x y : ℕ → ℕ) :
   ring
 
 /-- The numerators of `fQ` over `2^328`. -/
-def fNL : List ℕ := (List.range 151).map fun u => if u ≤ 40 then (fTab.getD u 0).toNat * 2 ^ (320 - 8 * u) else 2 ^ 328
+def fNL : List ℕ := (List.range 256).map fun u => if u ≤ 40 then (fTab.getD u 0).toNat * 2 ^ (320 - 8 * u) else 2 ^ 328
 
 /-- The numerators of `f2Q` over `2^336`. -/
-def f2NL : List ℕ := (List.range 151).map fun u => if u ≤ 40 then (f2Tab.getD u 0).toNat * 2 ^ (320 - 8 * u) else 2 ^ 336
+def f2NL : List ℕ := (List.range 256).map fun u => if u ≤ 40 then (f2Tab.getD u 0).toNat * 2 ^ (320 - 8 * u) else 2 ^ 336
 
 theorem fTab_nonneg (u : ℕ) (hu : u ≤ 40) : 0 ≤ fTab.getD u 0 := by
   rw [← fTab_eq, getD_sumTL 40 u hu]
@@ -375,7 +375,7 @@ theorem f2Tab_nonneg (u : ℕ) (hu : u ≤ 40) : 0 ≤ f2Tab.getD u 0 := by
   rw [← f2Tab_eq, getD_sumTL 40 u hu]
   exact (f2Num_mem u).1
 
-theorem fQ_eq (u : ℕ) (hu : u ≤ 150) : fQ u = (fNL.getD u 0 : ℚ) / 2 ^ 328 := by
+theorem fQ_eq (u : ℕ) (hu : u ≤ 255) : fQ u = (fNL.getD u 0 : ℚ) / 2 ^ 328 := by
   rw [fNL, getD_map_range _ _ _ _ (by omega), fQ]
   split_ifs with h
   · have hc : ((fTab.getD u 0).toNat : ℚ) = (fTab.getD u 0 : ℚ) := by
@@ -386,7 +386,7 @@ theorem fQ_eq (u : ℕ) (hu : u ≤ 150) : fQ u = (fNL.getD u 0 : ℚ) / 2 ^ 328
     field_simp
   · rw [Nat.cast_pow, Nat.cast_ofNat, div_self (by positivity)]
 
-theorem f2Q_eq (u : ℕ) (hu : u ≤ 150) : f2Q u = (f2NL.getD u 0 : ℚ) / 2 ^ 336 := by
+theorem f2Q_eq (u : ℕ) (hu : u ≤ 255) : f2Q u = (f2NL.getD u 0 : ℚ) / 2 ^ 336 := by
   rw [f2NL, getD_map_range _ _ _ _ (by omega), f2Q]
   split_ifs with h
   · have hc : ((f2Tab.getD u 0).toNat : ℚ) = (f2Tab.getD u 0 : ℚ) := by
@@ -419,26 +419,26 @@ theorem getD_map_sq (l : List ℕ) (i : ℕ) : (l.map (· ^ 2)).getD i 0 = l.get
     rfl
 
 /-- The numerators of `μL` over `2^128`. -/
-def μNL : List ℕ := (List.range 151).map fun i => cdiv (binN 7 i fNL) (2 ^ (3 * i + 200))
+def μNL : List ℕ := (List.range 256).map fun i => cdiv (binN 7 i fNL) (2 ^ (3 * i + 200))
 
-theorem μQ_eq (i : ℕ) (hi : i ≤ 150) : μQ i = (μNL.getD i 0 : ℚ) / 2 ^ 128 := by
+theorem μQ_eq (i : ℕ) (hi : i ≤ 255) : μQ i = (μNL.getD i 0 : ℚ) / 2 ^ 128 := by
   rw [μNL, getD_map_range _ _ _ _ (by omega), μQ, list_sum_range,
     binQ_sum_list 3 7 i 328 fNL fQ (1 / 8) (7 / 8) (by norm_num) (by norm_num) (fun u hu => fQ_eq u (by omega)),
     rup_dyadic _ _ (by omega), show 3 * i + 328 - 128 = 3 * i + 200 by omega]
 
 /-- The numerators of `hL` over `2^128`. -/
-def hNL : List ℕ := (List.range 151).map fun s => cdiv (convN s fNL fNL) (2 ^ 528)
+def hNL : List ℕ := (List.range 256).map fun s => cdiv (convN s fNL fNL) (2 ^ 528)
 
-theorem hQ_eq (s : ℕ) (hs : s ≤ 150) : hQ s = (hNL.getD s 0 : ℚ) / 2 ^ 128 := by
+theorem hQ_eq (s : ℕ) (hs : s ≤ 255) : hQ s = (hNL.getD s 0 : ℚ) / 2 ^ 128 := by
   rw [hNL, getD_map_range _ _ _ _ (by omega), hQ, list_sum_range,
     pascal_conv_list s 328 328 fNL fNL (by rw [fNL, List.length_map, List.length_range]; omega) fQ fQ (fun u hu => fQ_eq u (by omega))
       (fun u hu => fQ_eq u (by omega)), rup_dyadic _ _ (by norm_num)]
 
 /-- The numerators of `νL` over `2^128`. -/
-def νNL : List ℕ := (List.range 151).map fun i =>
+def νNL : List ℕ := (List.range 256).map fun i =>
   cdiv (binN 7 i f2NL + 7 * 2 ^ 208 * binN 6 i hNL) (2 ^ (3 * i + 211))
 
-theorem νQ_eq (i : ℕ) (hi : i ≤ 150) : νQ i = (νNL.getD i 0 : ℚ) / 2 ^ 128 := by
+theorem νQ_eq (i : ℕ) (hi : i ≤ 255) : νQ i = (νNL.getD i 0 : ℚ) / 2 ^ 128 := by
   rw [νNL, getD_map_range _ _ _ _ (by omega), νQ, list_sum_range, list_sum_range,
     binQ_sum_list 3 7 i 336 f2NL f2Q (1 / 8) (7 / 8) (by norm_num) (by norm_num) (fun u hu => f2Q_eq u (by omega)),
     binQ_sum_list 3 6 i 128 hNL (fun s => hL.getD s 0) (1 / 8) (6 / 8) (by norm_num) (by norm_num)
@@ -454,22 +454,22 @@ theorem νQ_eq (i : ℕ) (hi : i ≤ 150) : νQ i = (νNL.getD i 0 : ℚ) / 2 ^ 
 /-- The squared numerators of `μL`, over `2^256`. -/
 def μ2NL : List ℕ := μNL.map (· ^ 2)
 
-theorem μL_sq (i : ℕ) (hi : i ≤ 150) : μL.getD i 0 ^ 2 = (μ2NL.getD i 0 : ℚ) / 2 ^ 256 := by
+theorem μL_sq (i : ℕ) (hi : i ≤ 255) : μL.getD i 0 ^ 2 = (μ2NL.getD i 0 : ℚ) / 2 ^ 256 := by
   rw [μL_getD i hi, μQ_eq i hi, μ2NL, getD_map_sq]
   push_cast
   ring
 
 /-- The numerators of `gL` over `2^128`. -/
-def gNL : List ℕ := (List.range 151).map fun s => cdiv (convN s μ2NL μ2NL) (2 ^ 384)
+def gNL : List ℕ := (List.range 256).map fun s => cdiv (convN s μ2NL μ2NL) (2 ^ 384)
 
-theorem gQ_eq (s : ℕ) (hs : s ≤ 150) : gQ s = (gNL.getD s 0 : ℚ) / 2 ^ 128 := by
+theorem gQ_eq (s : ℕ) (hs : s ≤ 255) : gQ s = (gNL.getD s 0 : ℚ) / 2 ^ 128 := by
   rw [gNL, getD_map_range _ _ _ _ (by omega), gQ, list_sum_range,
     pascal_conv_list s 256 256 μ2NL μ2NL (by rw [μ2NL, μNL, List.length_map, List.length_map, List.length_range]; omega) (fun i => μL.getD i 0 ^ 2) (fun i => μL.getD i 0 ^ 2)
       (fun u hu => μL_sq u (by omega)) (fun u hu => μL_sq u (by omega)), rup_dyadic _ _ (by norm_num)]
 
-theorem map_range_eq {g : ℕ → ℚ} {l : List ℕ} (hl : l.length = 151)
-    (h : ∀ n ≤ 150, g n = (l.getD n 0 : ℚ) / 2 ^ 128) :
-    (List.range 151).map g = l.map fun x : ℕ => (x : ℚ) / 2 ^ 128 := by
+theorem map_range_eq {g : ℕ → ℚ} {l : List ℕ} (hl : l.length = 256)
+    (h : ∀ n ≤ 255, g n = (l.getD n 0 : ℚ) / 2 ^ 128) :
+    (List.range 256).map g = l.map fun x : ℕ => (x : ℚ) / 2 ^ 128 := by
   refine List.ext_getElem (by simp [hl]) fun n h1 h2 => ?_
   simp only [List.length_map, List.length_range] at h1
   rw [List.getElem_map, List.getElem_map, List.getElem_range, h n (by omega), List.getD_eq_getElem _ _ (by omega)]
