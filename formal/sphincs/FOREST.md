@@ -384,3 +384,11 @@ the best of a grid of step 1/8; the limits are the largest `N` both routes certi
 down to four significant digits. Every checker takes the total height `H`, the kept height `b`, the number
 of coordinates `T` (the exponent of the moment tables, which depend only on the shape of one tree) and the
 keygen credit `K` as arguments, so one checker serves every configuration.
+
+### At 100 bits
+
+`ForestPotential.det_bitsS` ([Certificates/ClosingBits](LeanForest/Certificates/ClosingBits.lean)):
+`bits ≤ 127` bits from the small route alone at `qh = 2^bits`, since no budget `q ≥ 2^bits` can break
+the claim; `checkSmallS` is `checkSmallF` against `2^(128 − bits)`. The 100-bit certificates
+([Certificates/Bits100](LeanForest/Certificates/Bits100), `emit-bits 100`, limits `PARAMS_BITS` from
+`maxn-bits`) use tables up to `n1 = 255` and reach 99.9% to 100% of the cover attack at 100 bits.

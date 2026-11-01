@@ -27,14 +27,14 @@ structure OptN where
 
 /-- The check of a near certificate against a Poisson table. -/
 def checkOptN (H k a : ℕ) (t : PoisT) (o : OptN) : Bool :=
-  decide (t.n1 ≤ 150) && decide (o.nt.length = t.n1 + 1) && checkLeaf o.nt o.Jn &&
+  decide (t.n1 ≤ 255) && decide (o.nt.length = t.n1 + 1) && checkLeaf o.nt o.Jn &&
     decide (∀ n < t.n1 + 1, nBound H k a n ≤ o.nt.getD n 0) &&
     decide ((k : ℚ) * κQ H ≤ o.nt.getD t.n1 0 + o.Jn) &&
     decide ((((List.range (t.n1 + 1)).map fun n => t.pb n * o.nt.getD n 0).sum +
       t.pb (t.n1 + 1) * (o.nt.getD t.n1 0 / (1 - t.r) + o.Jn / (1 - t.r) ^ 2)) ≤ o.En)
 
 theorem checkOptN_parts {H k a : ℕ} {t : PoisT} {o : OptN} (h : checkOptN H k a t o = true) :
-    t.n1 ≤ 150 ∧ o.nt.length = t.n1 + 1 ∧ checkLeaf o.nt o.Jn = true ∧
+    t.n1 ≤ 255 ∧ o.nt.length = t.n1 + 1 ∧ checkLeaf o.nt o.Jn = true ∧
       (∀ n < t.n1 + 1, nBound H k a n ≤ o.nt.getD n 0) ∧ (k : ℚ) * κQ H ≤ o.nt.getD t.n1 0 + o.Jn ∧
       (((List.range (t.n1 + 1)).map fun n => t.pb n * o.nt.getD n 0).sum +
         t.pb (t.n1 + 1) * (o.nt.getD t.n1 0 / (1 - t.r) + o.Jn / (1 - t.r) ^ 2)) ≤ o.En := by
@@ -57,7 +57,7 @@ theorem avgN_near_le {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight 
     avgN (fun Ms => κE * yN Ms) n 0 ≤ ENNReal.ofReal (leafQ o.nt o.Jn n : ℝ) := by
   subst hk
   subst ha
-  obtain ⟨h150, hl, hleaf, hnb, hend, -⟩ := checkOptN_parts ho
+  obtain ⟨h255, hl, hleaf, hnb, hend, -⟩ := checkOptN_parts ho
   have hκ := κE_toReal H b hH hb
   have hκ0 : (0 : ℝ) ≤ (κQ H : ℝ) := by unfold κQ; positivity
   have hκE : κE = ENNReal.ofReal (κQ H : ℝ) := by

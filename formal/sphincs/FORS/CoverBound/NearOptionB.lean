@@ -67,7 +67,7 @@ def meanNB (t : PoisT) (tab : List ℚ) (J : ℚ) : ℚ :=
 def checkOptNB (H b k a : ℕ) (t : PoisT) (o : OptNB) : Bool :=
   decide (0 < o.c1) && decide (0 < o.θ) && decide (0 ≤ o.cthr) && decide (o.θ * o.c1 < 2 ^ o.s) &&
     decide (expUp (o.θ * o.c1) o.s t.P ≤ o.eC) &&
-    decide (t.n1 ≤ 150) && decide (o.gt.length = t.n1 + 1) && decide (o.ht.length = t.n1 + 1) &&
+    decide (t.n1 ≤ 255) && decide (o.gt.length = t.n1 + 1) && decide (o.ht.length = t.n1 + 1) &&
     checkLeaf o.gt o.Jg && checkLeaf o.ht o.Jh &&
     decide (∀ n < t.n1 + 1, gNB H k a o n ≤ o.gt.getD n 0) &&
     decide (∀ n < t.n1 + 1, hNB H k a t.P o n ≤ o.ht.getD n 0) &&
@@ -78,7 +78,7 @@ def checkOptNB (H b k a : ℕ) (t : PoisT) (o : OptNB) : Bool :=
 
 theorem checkOptNB_parts {H b k a : ℕ} {t : PoisT} {o : OptNB} (h : checkOptNB H b k a t o = true) :
     0 < o.c1 ∧ 0 < o.θ ∧ 0 ≤ o.cthr ∧ o.θ * o.c1 < 2 ^ o.s ∧ expUp (o.θ * o.c1) o.s t.P ≤ o.eC ∧
-      t.n1 ≤ 150 ∧ o.gt.length = t.n1 + 1 ∧ o.ht.length = t.n1 + 1 ∧
+      t.n1 ≤ 255 ∧ o.gt.length = t.n1 + 1 ∧ o.ht.length = t.n1 + 1 ∧
       checkLeaf o.gt o.Jg = true ∧ checkLeaf o.ht o.Jh = true ∧
       (∀ n < t.n1 + 1, gNB H k a o n ≤ o.gt.getD n 0) ∧ (∀ n < t.n1 + 1, hNB H k a t.P o n ≤ o.ht.getD n 0) ∧
       (k : ℚ) * κQ H ≤ o.gt.getD t.n1 0 + o.Jg ∧ o.eC - 1 ≤ o.ht.getD t.n1 0 + o.Jh ∧
@@ -300,9 +300,9 @@ theorem avgN_le_of_card0 {U : Type} [Fintype U] [Nonempty U] {φ ψ : Multiset U
     (h : ∀ X : Multiset U, Multiset.card X = n → φ X ≤ ψ X) : avgN φ n 0 ≤ avgN ψ n 0 :=
   avgN_le_of_card n h n 0 (by simp)
 
-/-- The mean of the near value at an index with `n ≤ 150` views. -/
+/-- The mean of the near value at an index with `n ≤ 255` views. -/
 theorem avgN_κyN_le {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b)
-    (hk : forsTrees = k) (ha : forsHeight = a) (n : ℕ) (hn : n ≤ 150) :
+    (hk : forsTrees = k) (ha : forsHeight = a) (n : ℕ) (hn : n ≤ 255) :
     avgN (fun Ms => κE * yN Ms) n 0 ≤ ENNReal.ofReal (nBound H k a n : ℝ) := by
   subst hk ha
   have hκ0 : (0 : ℝ) ≤ (κQ H : ℝ) := by unfold κQ; positivity
@@ -418,7 +418,7 @@ theorem avgN_gN_le {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = 
     (hk : forsTrees = k) (ha : forsHeight = a) {t : PoisT} {o : OptNB}
     (ho : checkOptNB H b k a t o = true) (n : ℕ) :
     avgN (gN (o.c1 : ℝ)) n 0 ≤ ENNReal.ofReal (leafQ o.gt o.Jg n : ℝ) := by
-  obtain ⟨hc1, -, -, -, -, h150, hgl, -, hlg, -, hgb, -, hgend, -⟩ := checkOptNB_parts ho
+  obtain ⟨hc1, -, -, -, -, h255, hgl, -, hlg, -, hgb, -, hgend, -⟩ := checkOptNB_parts ho
   have hc1' : (0 : ℝ) < (o.c1 : ℝ) := by exact_mod_cast hc1
   have hκE := κE_eq_ofReal H b hH hb
   have hκ0 : (0 : ℝ) ≤ (κQ H : ℝ) := by unfold κQ; positivity
@@ -488,7 +488,7 @@ theorem avgN_hN_le {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = 
     (hk : forsTrees = k) (ha : forsHeight = a) {t : PoisT} {o : OptNB}
     (ho : checkOptNB H b k a t o = true) (n : ℕ) :
     avgN (hN (o.c1 : ℝ) (o.θ : ℝ)) n 0 ≤ 1 + ENNReal.ofReal (leafQ o.ht o.Jh n : ℝ) := by
-  obtain ⟨hc1, hθ, -, hs, heC, h150, -, hhl, -, hlh, -, hhb, -, hhend, -⟩ := checkOptNB_parts ho
+  obtain ⟨hc1, hθ, -, hs, heC, h255, -, hhl, -, hlh, -, hhb, -, hhend, -⟩ := checkOptNB_parts ho
   have hθ' : (0 : ℝ) < (o.θ : ℝ) := by exact_mod_cast hθ
   have hexp := optNB_exp_le ho
   have hcap : avgN (hN (o.c1 : ℝ) (o.θ : ℝ)) n 0 ≤ 1 + ENNReal.ofReal ((o.eC - 1 : ℚ) : ℝ) := by

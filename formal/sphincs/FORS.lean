@@ -159,8 +159,14 @@ import FORS.LargeBudget.Route
 import FORS.LargeBudget.SurvivalWeight
 import FORS.LargeBudget.WeightedPotential
 import FORS.LargeBudget.WeightedScan
+import FORS.Certificates.Bits100.H20
+import FORS.Certificates.Bits100.H22
+import FORS.Certificates.Bits100.H24
+import FORS.Certificates.Bits100.H26
+import FORS.Certificates.Bits100.H28
 import FORS.Certificates.Build
 import FORS.Certificates.Closing
+import FORS.Certificates.ClosingBits
 import FORS.Certificates.H20
 import FORS.Certificates.H22
 import FORS.Certificates.H24
@@ -228,5 +234,6 @@ import FORS.SWRoute.WeightScanA
 import FORS.SWRoute.ZnGate
 import FORS.Certificates.H24SW
 import FORS.Lifetimes
+import FORS.Lifetimes100
 import FORS.Configurations
 import FORS.Main

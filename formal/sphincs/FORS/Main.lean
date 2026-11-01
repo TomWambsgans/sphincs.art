@@ -1,4 +1,5 @@
 import FORS.Lifetimes
+import FORS.Lifetimes100
 
 /-!
 # leanSPHINCS, FORS variant: every security theorem
@@ -209,5 +210,180 @@ theorem requestedSecurity : ∀ P ∈ configurations, Secure127 P := by
 
 /-- `Secure127` is the target `SecurityBits P 127` of `Statement.lean`, spelled out. -/
 theorem secure127_iff (P : Params) : Secure127 P ↔ SecurityBits P 127 := Iff.rfl
+
+
+/-! ## 100 bits
+
+The same game at a lower target: `Secure100 P` bounds the forgery probability by `q / 2^100`. Such a
+target constrains only the budgets `q < 2^100`, which the small route alone covers
+(`ForsPotential.det_bitsS`, `Certificates/ClosingBits.lean`), so these limits are within 0.1% of the
+cover attack at 100 bits, the signature count at which a digest query covers a FORS instance with
+probability `2^-100`. -/
+
+/-- **The claim at 100 bits**, for the scheme with parameters `P`: every adversary whose runs of the
+SUF-CMA game make at most `q ≥ 1` hash queries in total forges with probability at most `q / 2^100`. -/
+def Secure100 (P : Params) : Prop :=
+  letI := P
+  ∀ q : ℕ, 1 ≤ q → ∀ adversary : Adversary, HasHashQueryBound adversary q →
+    forgeAdvantage adversary ≤ q / ((2 ^ 100 : ℕ) : ℝ≥0∞)
+
+/-- `Secure100` is the target `SecurityBits P 100` of `Statement.lean`, spelled out. -/
+theorem secure100_iff (P : Params) : Secure100 P ↔ SecurityBits P 100 := Iff.rfl
+
+/-! ### h = 20, 100 bits -/
+
+/-- Full key: 51,330,000 signatures at 100 bits. -/
+theorem h20_full_100 : Secure100 (.pruned (h := 20) (b := 20) (k := 24) (a := 10) (N := 51_330_000)) :=
+  Lifetimes.h20_full_bits100
+/-- Pruned key, kept subtree of height 14: 987,800 signatures at 100 bits. -/
+theorem h20_pruned14_100 : Secure100 (.pruned (h := 20) (b := 14) (k := 24) (a := 10) (N := 987_800)) :=
+  Lifetimes.h20_pruned14_bits100
+/-- Pruned key, kept subtree of height 13: 511,100 signatures at 100 bits. -/
+theorem h20_pruned13_100 : Secure100 (.pruned (h := 20) (b := 13) (k := 24) (a := 10) (N := 511_100)) :=
+  Lifetimes.h20_pruned13_bits100
+/-- Pruned key, kept subtree of height 12: 264,400 signatures at 100 bits. -/
+theorem h20_pruned12_100 : Secure100 (.pruned (h := 20) (b := 12) (k := 24) (a := 10) (N := 264_400)) :=
+  Lifetimes.h20_pruned12_bits100
+/-- Pruned key, kept subtree of height 10: 70,800 signatures at 100 bits. -/
+theorem h20_pruned10_100 : Secure100 (.pruned (h := 20) (b := 10) (k := 24) (a := 10) (N := 70_800)) :=
+  Lifetimes.h20_pruned10_bits100
+/-- Pruned key, kept subtree of height 8: 18,940 signatures at 100 bits. -/
+theorem h20_pruned8_100 : Secure100 (.pruned (h := 20) (b := 8) (k := 24) (a := 10) (N := 18_940)) :=
+  Lifetimes.h20_pruned8_bits100
+/-! ### h = 22, 100 bits -/
+
+/-- Full key: 205,300,000 signatures at 100 bits. -/
+theorem h22_full_100 : Secure100 (.pruned (h := 22) (b := 22) (k := 24) (a := 10) (N := 205_300_000)) :=
+  Lifetimes.h22_full_bits100
+/-- Pruned key, kept subtree of height 20: 55,040,000 signatures at 100 bits. -/
+theorem h22_pruned20_100 : Secure100 (.pruned (h := 22) (b := 20) (k := 24) (a := 10) (N := 55_040_000)) :=
+  Lifetimes.h22_pruned20_bits100
+/-- Pruned key, kept subtree of height 14: 1,057,000 signatures at 100 bits. -/
+theorem h22_pruned14_100 : Secure100 (.pruned (h := 22) (b := 14) (k := 24) (a := 10) (N := 1_057_000)) :=
+  Lifetimes.h22_pruned14_bits100
+/-- Pruned key, kept subtree of height 13: 547,400 signatures at 100 bits. -/
+theorem h22_pruned13_100 : Secure100 (.pruned (h := 22) (b := 13) (k := 24) (a := 10) (N := 547_400)) :=
+  Lifetimes.h22_pruned13_bits100
+/-- Pruned key, kept subtree of height 12: 283,200 signatures at 100 bits. -/
+theorem h22_pruned12_100 : Secure100 (.pruned (h := 22) (b := 12) (k := 24) (a := 10) (N := 283_200)) :=
+  Lifetimes.h22_pruned12_bits100
+/-- Pruned key, kept subtree of height 10: 75,780 signatures at 100 bits. -/
+theorem h22_pruned10_100 : Secure100 (.pruned (h := 22) (b := 10) (k := 24) (a := 10) (N := 75_780)) :=
+  Lifetimes.h22_pruned10_bits100
+/-- Pruned key, kept subtree of height 8: 20,270 signatures at 100 bits. -/
+theorem h22_pruned8_100 : Secure100 (.pruned (h := 22) (b := 8) (k := 24) (a := 10) (N := 20_270)) :=
+  Lifetimes.h22_pruned8_bits100
+/-! ### h = 24, 100 bits -/
+
+/-- Full key: 821,300,000 signatures at 100 bits. -/
+theorem h24_full_100 : Secure100 (.pruned (h := 24) (b := 24) (k := 24) (a := 10) (N := 821_300_000)) :=
+  Lifetimes.h24_full_bits100
+/-- Pruned key, kept subtree of height 20: 59,000,000 signatures at 100 bits. -/
+theorem h24_pruned20_100 : Secure100 (.pruned (h := 24) (b := 20) (k := 24) (a := 10) (N := 59_000_000)) :=
+  Lifetimes.h24_pruned20_bits100
+/-- Pruned key, kept subtree of height 14: 1,132,000 signatures at 100 bits. -/
+theorem h24_pruned14_100 : Secure100 (.pruned (h := 24) (b := 14) (k := 24) (a := 10) (N := 1_132_000)) :=
+  Lifetimes.h24_pruned14_bits100
+/-- Pruned key, kept subtree of height 13: 586,000 signatures at 100 bits. -/
+theorem h24_pruned13_100 : Secure100 (.pruned (h := 24) (b := 13) (k := 24) (a := 10) (N := 586_000)) :=
+  Lifetimes.h24_pruned13_bits100
+/-- Pruned key, kept subtree of height 12: 303,100 signatures at 100 bits. -/
+theorem h24_pruned12_100 : Secure100 (.pruned (h := 24) (b := 12) (k := 24) (a := 10) (N := 303_100)) :=
+  Lifetimes.h24_pruned12_bits100
+/-- Pruned key, kept subtree of height 10: 81,090 signatures at 100 bits. -/
+theorem h24_pruned10_100 : Secure100 (.pruned (h := 24) (b := 10) (k := 24) (a := 10) (N := 81_090)) :=
+  Lifetimes.h24_pruned10_bits100
+/-- Pruned key, kept subtree of height 8: 21,690 signatures at 100 bits. -/
+theorem h24_pruned8_100 : Secure100 (.pruned (h := 24) (b := 8) (k := 24) (a := 10) (N := 21_690)) :=
+  Lifetimes.h24_pruned8_bits100
+/-- Layered key, 10 + 7 + 7: 821,300,000 signatures at 100 bits. -/
+theorem h24_layered_100 : Secure100 (.layered (h := 24) (d := 3) (ℓ := 7) (k := 24) (a := 10) (N := 821_300_000)) :=
+  Lifetimes.h24_layered_bits100
+/-- Layered key, 10 + 7 + 7, 23 FORS trees of height 9: 296,100,000 signatures at 100 bits. -/
+theorem h24_layered_k23_100 : Secure100 (.layered (h := 24) (d := 3) (ℓ := 7) (k := 23) (a := 9) (N := 296_100_000)) :=
+  Lifetimes.h24_layered_k23_bits100
+/-- Layered key, 10 + 7 + 7, 19 FORS trees of height 9: 126,800,000 signatures at 100 bits. -/
+theorem h24_layered_k19_100 : Secure100 (.layered (h := 24) (d := 3) (ℓ := 7) (k := 19) (a := 9) (N := 126_800_000)) :=
+  Lifetimes.h24_layered_k19_bits100
+/-! ### h = 26, 100 bits -/
+
+/-- Full key: 3,285,000,000 signatures at 100 bits. -/
+theorem h26_full_100 : Secure100 (.pruned (h := 26) (b := 26) (k := 24) (a := 10) (N := 3_285_000_000)) :=
+  Lifetimes.h26_full_bits100
+/-- Pruned key, kept subtree of height 20: 63,210,000 signatures at 100 bits. -/
+theorem h26_pruned20_100 : Secure100 (.pruned (h := 26) (b := 20) (k := 24) (a := 10) (N := 63_210_000)) :=
+  Lifetimes.h26_pruned20_bits100
+/-- Pruned key, kept subtree of height 14: 1,212,000 signatures at 100 bits. -/
+theorem h26_pruned14_100 : Secure100 (.pruned (h := 26) (b := 14) (k := 24) (a := 10) (N := 1_212_000)) :=
+  Lifetimes.h26_pruned14_bits100
+/-- Pruned key, kept subtree of height 13: 627,100 signatures at 100 bits. -/
+theorem h26_pruned13_100 : Secure100 (.pruned (h := 26) (b := 13) (k := 24) (a := 10) (N := 627_100)) :=
+  Lifetimes.h26_pruned13_bits100
+/-- Pruned key, kept subtree of height 12: 324,300 signatures at 100 bits. -/
+theorem h26_pruned12_100 : Secure100 (.pruned (h := 26) (b := 12) (k := 24) (a := 10) (N := 324_300)) :=
+  Lifetimes.h26_pruned12_bits100
+/-- Pruned key, kept subtree of height 10: 86,760 signatures at 100 bits. -/
+theorem h26_pruned10_100 : Secure100 (.pruned (h := 26) (b := 10) (k := 24) (a := 10) (N := 86_760)) :=
+  Lifetimes.h26_pruned10_bits100
+/-- Pruned key, kept subtree of height 8: 23,200 signatures at 100 bits. -/
+theorem h26_pruned8_100 : Secure100 (.pruned (h := 26) (b := 8) (k := 24) (a := 10) (N := 23_200)) :=
+  Lifetimes.h26_pruned8_bits100
+/-- Layered key, 10 + 8 + 8: 3,285,000,000 signatures at 100 bits. -/
+theorem h26_layered_100 : Secure100 (.layered (h := 26) (d := 3) (ℓ := 8) (k := 24) (a := 10) (N := 3_285_000_000)) :=
+  Lifetimes.h26_layered_bits100
+/-! ### h = 28, 100 bits -/
+
+/-- Full key: 13,140,000,000 signatures at 100 bits. -/
+theorem h28_full_100 : Secure100 (.pruned (h := 28) (b := 28) (k := 24) (a := 10) (N := 13_140_000_000)) :=
+  Lifetimes.h28_full_bits100
+/-- Pruned key, kept subtree of height 20: 67,710,000 signatures at 100 bits. -/
+theorem h28_pruned20_100 : Secure100 (.pruned (h := 28) (b := 20) (k := 24) (a := 10) (N := 67_710_000)) :=
+  Lifetimes.h28_pruned20_bits100
+/-- Pruned key, kept subtree of height 14: 1,297,000 signatures at 100 bits. -/
+theorem h28_pruned14_100 : Secure100 (.pruned (h := 28) (b := 14) (k := 24) (a := 10) (N := 1_297_000)) :=
+  Lifetimes.h28_pruned14_bits100
+/-- Pruned key, kept subtree of height 13: 671,000 signatures at 100 bits. -/
+theorem h28_pruned13_100 : Secure100 (.pruned (h := 28) (b := 13) (k := 24) (a := 10) (N := 671_000)) :=
+  Lifetimes.h28_pruned13_bits100
+/-- Pruned key, kept subtree of height 12: 347,000 signatures at 100 bits. -/
+theorem h28_pruned12_100 : Secure100 (.pruned (h := 28) (b := 12) (k := 24) (a := 10) (N := 347_000)) :=
+  Lifetimes.h28_pruned12_bits100
+/-- Pruned key, kept subtree of height 10: 92,800 signatures at 100 bits. -/
+theorem h28_pruned10_100 : Secure100 (.pruned (h := 28) (b := 10) (k := 24) (a := 10) (N := 92_800)) :=
+  Lifetimes.h28_pruned10_bits100
+/-- Pruned key, kept subtree of height 8: 24,810 signatures at 100 bits. -/
+theorem h28_pruned8_100 : Secure100 (.pruned (h := 28) (b := 8) (k := 24) (a := 10) (N := 24_810)) :=
+  Lifetimes.h28_pruned8_bits100
+/-- Layered key, 10 + 9 + 9: 13,140,000,000 signatures at 100 bits. -/
+theorem h28_layered_100 : Secure100 (.layered (h := 28) (d := 3) (ℓ := 9) (k := 24) (a := 10) (N := 13_140_000_000)) :=
+  Lifetimes.h28_layered_bits100
+
+/-- The 39 configurations at 100 bits. -/
+def configurations100 : List Params := [
+  .pruned 20 20 24 10 51_330_000, .pruned 20 14 24 10 987_800, .pruned 20 13 24 10 511_100,
+  .pruned 20 12 24 10 264_400, .pruned 20 10 24 10 70_800, .pruned 20 8 24 10 18_940,
+  .pruned 22 22 24 10 205_300_000, .pruned 22 20 24 10 55_040_000, .pruned 22 14 24 10 1_057_000,
+  .pruned 22 13 24 10 547_400, .pruned 22 12 24 10 283_200, .pruned 22 10 24 10 75_780,
+  .pruned 22 8 24 10 20_270, .pruned 24 24 24 10 821_300_000, .pruned 24 20 24 10 59_000_000,
+  .pruned 24 14 24 10 1_132_000, .pruned 24 13 24 10 586_000, .pruned 24 12 24 10 303_100,
+  .pruned 24 10 24 10 81_090, .pruned 24 8 24 10 21_690, .layered 24 3 7 24 10 821_300_000,
+  .layered 24 3 7 23 9 296_100_000, .layered 24 3 7 19 9 126_800_000, .pruned 26 26 24 10 3_285_000_000,
+  .pruned 26 20 24 10 63_210_000, .pruned 26 14 24 10 1_212_000, .pruned 26 13 24 10 627_100,
+  .pruned 26 12 24 10 324_300, .pruned 26 10 24 10 86_760, .pruned 26 8 24 10 23_200,
+  .layered 26 3 8 24 10 3_285_000_000, .pruned 28 28 24 10 13_140_000_000, .pruned 28 20 24 10 67_710_000,
+  .pruned 28 14 24 10 1_297_000, .pruned 28 13 24 10 671_000, .pruned 28 12 24 10 347_000,
+  .pruned 28 10 24 10 92_800, .pruned 28 8 24 10 24_810, .layered 28 3 9 24 10 13_140_000_000]
+
+/-- **Main theorem at 100 bits**: every configuration has 100 bits of SUF-CMA security. -/
+theorem requestedSecurity100 : ∀ P ∈ configurations100, Secure100 P := by
+  simp only [configurations100, List.forall_mem_cons, List.not_mem_nil, IsEmpty.forall_iff,
+    implies_true, and_true]
+  exact ⟨h20_full_100, h20_pruned14_100, h20_pruned13_100, h20_pruned12_100, h20_pruned10_100,
+    h20_pruned8_100, h22_full_100, h22_pruned20_100, h22_pruned14_100, h22_pruned13_100, h22_pruned12_100,
+    h22_pruned10_100, h22_pruned8_100, h24_full_100, h24_pruned20_100, h24_pruned14_100, h24_pruned13_100,
+    h24_pruned12_100, h24_pruned10_100, h24_pruned8_100, h24_layered_100, h24_layered_k23_100,
+    h24_layered_k19_100, h26_full_100, h26_pruned20_100, h26_pruned14_100, h26_pruned13_100,
+    h26_pruned12_100, h26_pruned10_100, h26_pruned8_100, h26_layered_100, h28_full_100, h28_pruned20_100,
+    h28_pruned14_100, h28_pruned13_100, h28_pruned12_100, h28_pruned10_100, h28_pruned8_100, h28_layered_100⟩
 
 end FORS

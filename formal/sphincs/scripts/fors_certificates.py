@@ -122,9 +122,11 @@ def p2N(a, n):
     return max(0, cdiv(2 ** 128 * z2N(a, n), (2 ** a) ** (n + 1)))
 
 def moment_tabs(a):
-    """P1tab, P2tab for trees of height a, n <= 150 (CoverBound/MomentTable.lean)"""
-    return ([Fr(p1N(a, n), 2 ** 128) for n in range(151)],
-            [Fr(p2N(a, n), 2 ** 128) for n in range(151)])
+    """P1tab, P2tab for trees of height a, n <= NMAX = 255 (CoverBound/MomentTable.lean)"""
+    return ([Fr(p1N(a, n), 2 ** 128) for n in range(NMAX + 1)],
+            [Fr(p2N(a, n), 2 ** 128) for n in range(NMAX + 1)])
+
+NMAX = 255   # the moment tables cover n <= NMAX
 
 _TABS = {}
 
@@ -132,7 +134,7 @@ def moment_tables(a):
     """moment_tabs(a), computed once per tree height"""
     if a not in _TABS:
         _TABS[a] = moment_tabs(a)
-        assert all(len(x) == 151 for x in _TABS[a])
+        assert all(len(x) == NMAX + 1 for x in _TABS[a])
     return _TABS[a]
 
 P1, P2 = moment_tables(FA)
@@ -223,7 +225,7 @@ def checkOptF(b, t, o):
     if not (0 < o.c1 and 0 < o.th and 0 <= o.cthr and o.th * o.c1 < 2 ** o.s): return False
     if not expUp(o.th * o.c1, o.s, t.P) <= o.eC: return False
     if not (o.eC - 1 - o.th * o.c1) / o.c1 ** 2 <= o.A2: return False
-    if not (n1 <= 150 and len(o.gt) == n1 + 1 and len(o.ht) == n1 + 1): return False
+    if not (n1 <= NMAX and len(o.gt) == n1 + 1 and len(o.ht) == n1 + 1): return False
     if not (checkLeaf(o.gt, o.Jg) and checkLeaf(o.ht, o.Jh)): return False
     for n in range(n1 + 1):
         if not gBound(o, n) <= o.gt[n]: return False
@@ -444,7 +446,7 @@ def okJ(b, t, o):
     m = optJ_m(o)
     return (0 < c1 and len(o.th) >= 1 and all(0 < th and th * c1 < 2 ** o.s for th in o.th) and 0 <= o.cthr and
             1 <= o.nb and o.nb ** k * c1.denominator <= c1.numerator * 2 ** (H + a * k) and o.T <= k and
-            all(2 <= n for n in o.nx) and 1 <= t.n1 <= 150 and 0 <= o.gt[0] and
+            all(2 <= n for n in o.nx) and 1 <= t.n1 <= NMAX and 0 <= o.gt[0] and
             all(0 <= o.at[j][0] and 0 <= o.ht[j][0] for j in range(m + 1)) and 0 <= o.Eg and
             all(0 <= o.Ea[j] and 0 <= o.Eh[j] for j in range(m + 1)))
 
@@ -603,7 +605,7 @@ def make_optN(b, t):
 
 def checkOptN(t, o):
     n1 = t.n1
-    if not (n1 <= 150 and len(o.nt) == n1 + 1 and checkLeaf(o.nt, o.Jn)): return False
+    if not (n1 <= NMAX and len(o.nt) == n1 + 1 and checkLeaf(o.nt, o.Jn)): return False
     for n in range(n1 + 1):
         if not nBound(n) <= o.nt[n]: return False
     if not FK * KQ <= o.nt[n1] + o.Jn: return False
@@ -1718,6 +1720,247 @@ def sw_args(argv):
     set_config(h, 'layered', h, k, a)
     return h, N, lx, opts
 
+
+# ---------------- fewer bits: the small route alone (Certificates/ClosingBits.lean) ----------------
+
+def checkSmallS(b, N, qh, bits, rho, cthr, B, c):
+    """ForsPotential.checkSmallS: checkSmallF with the right-hand side 2^(128 - bits), bits <= 127, qh >= 2^bits - 1"""
+    x = Fr(qh, 2 ** 128)
+    rate = Fr(N, 2 ** b * 2 ** FA)
+    conds = [bits <= 127, 2 ** bits <= qh + 1, Fr(3, 2) <= rho, rho <= 2, 1 + 4032 * (2 - rho) * x <= rho,
+             1 + 66 * x <= rho, 64 * x <= 1, qh <= 2 ** 127, N <= 2 ** 70, cthr <= rho / 2 ** 128, 0 <= B, 0 <= c,
+             rate <= rho - 1 - x]
+    return all(conds) and small_lhs(b, N, qh, rho, B, c) <= 2 ** (128 - bits)
+
+def best_opt_bits(b, t, cthr):
+    """float search of the option (c1, th) of one Chernoff factor minimizing B, mirroring optB: the bound tables
+    are convexified (convexify) and the Chernoff term divides by the truncated exponential expLow(th cthr, J)"""
+    import numpy as np
+    from scipy.stats import poisson
+    from scipy.special import gammaln
+    L, KQf, n1, mu = 2 ** b, 2.0 ** -TOTAL, t.n1, float(t.mu)
+    n = np.arange(n1 + 1)
+    ps, tail = poisson.pmf(n, mu), poisson.sf(n1, mu)
+    m1 = KQf * np.array([float(P1[i]) for i in n]) ** FK
+    m2 = KQf * KQf * np.array([float(P2[i]) for i in n]) ** FK
+    LC = np.array([x / 4 for x in range(-4 * 180, -4 * 60)])
+    KS = np.array([x / 4 for x in range(-40, 12)])
+    C1 = 2.0 ** np.repeat(LC, len(KS))
+    TH = 2.0 ** np.tile(KS, len(LC)) / (L * C1)
+    U = TH * C1
+    EC1 = np.expm1(U)
+    A2 = (EC1 - U) / C1 ** 2
+    G = np.minimum(m1[None, :], m2[None, :] / (4 * C1[:, None]))
+    Hh = np.minimum(EC1[:, None], TH[:, None] * m1[None, :] + A2[:, None] * m2[None, :])
+    for X in (G, Hh):                      # convexify along n, as the exact tables are
+        for k in range(1, n1 + 1):
+            X[:, k] = np.maximum(X[:, k], X[:, k - 1]) if k == 1 else np.maximum(X[:, k], 2 * X[:, k - 1] - X[:, k - 2])
+    Eg = (G * ps).sum(axis=1) + tail * np.maximum(KQf, G[:, -1]) * 3
+    Ee = (Hh * ps).sum(axis=1) + tail * np.maximum(EC1, Hh[:, -1]) * 3
+    u = TH * float(cthr)
+    jj = np.arange(t.J + 1)
+    lt = jj[None, :] * np.log(np.maximum(u, 1e-300))[:, None] - gammaln(jj + 1)[None, :]
+    m = lt.max(axis=1)
+    lexp = m + np.log(np.exp(lt - m[:, None]).sum(axis=1))
+    B = L * Eg + np.exp(np.minimum(700, L * np.log1p(Ee) - 1 - np.log(TH) - lexp))
+    k = int(np.argmin(B))
+    return float(B[k]), float(C1[k]), float(TH[k])
+
+def certify_bits(b, N, bits=100, verbose=True):
+    """the small-route certificate at `bits` bits: qh = 2^bits, tables up to n1 = NMAX, an option of one
+    Chernoff factor (OptF)"""
+    qh = 2 ** bits
+    t = make_poisT(b, N, qh, n1=NMAX)
+    assert checkPT(t) and checkRate(b, N, qh, t)
+    rho = choose_rho(qh)
+    cthr = rho / 2 ** 128
+    _, c1, th = best_opt_bits(b, t, cthr)
+    c1q, thq = dyadic(c1, 24), dyadic(th, 24)
+    s = max(0, math.ceil(math.log2(float(thq * c1q))) + 12)
+    o = fill_opt(b, t, c1q, thq, s, cthr)
+    assert checkOptF(b, t, o)
+    on = make_optN(b, t)
+    assert checkOptN(t, on)
+    c = (2 ** b * on.En) / 2
+    lhs = small_lhs(b, N, qh, rho, o.B, c)
+    ok = checkSmallS(b, N, qh, bits, rho, o.cthr, o.B, c)
+    if verbose:
+        print('H %d %s k %d a %d b %d N %d bits %d: lhs / 2^%d = %.6f %s' % (TOTAL, SHAPE, FK, FA, b, N, bits,
+              128 - bits, float(lhs / 2 ** (128 - bits)), 'OK' if ok else 'FAIL'), flush=True)
+    if not ok:
+        return None
+    return dict(h=TOTAL, shape=SHAPE, k=FK, a=FA, d=num_layers(), b=b, N=N, bits=bits, qh=qh, rho=rho, t=t, o=o, on=on)
+
+def attack_bits(h, shape, b, k, a, bits):
+    """the cover attack's lifetime at `bits` bits: E[Y] = 2^-bits per digest query, exact binomial loads
+    (scripts/scheme.py fors_log2_lifetime at `level`)"""
+    from scipy.stats import binom
+    import numpy as np
+    bb = h if shape == 'layered' else b
+    r = np.arange(0, 2000)
+    cov = (1 - (1 - 2.0 ** -a) ** r) ** k
+    def log2EY(N):
+        return (bb - h) + math.log2((binom.pmf(r, N, 2.0 ** -bb) * cov).sum() + 1e-300)
+    lo, hi = 1, 2
+    while log2EY(hi) <= -bits: lo, hi = hi, 2 * hi
+    while hi - lo > max(1, lo >> 30):
+        mid = (lo + hi) // 2
+        lo, hi = (mid, hi) if log2EY(mid) <= -bits else (lo, mid)
+    return lo
+
+def sig4(n):
+    """n rounded down to four significant digits"""
+    e = max(0, len(str(n)) - 4)
+    return n // 10 ** e * 10 ** e
+
+def maxn_bits(h, shape, b, k, a, bits=100):
+    """the largest N certified at `bits` bits (bisection to 1 part in 10^5), rounded down to four digits"""
+    set_config(h, shape, b, k, a)
+    att = attack_bits(h, shape, b, k, a, bits)
+    lo, hi = int(0.9 * att), int(1.01 * att)
+    ok = lambda N: certify_bits(b, N, bits, verbose=False) is not None
+    assert ok(lo), 'not certified at the lower end %d' % lo
+    while hi - lo > max(1, lo // 100000):
+        mid = (lo + hi) // 2
+        lo, hi = (mid, hi) if ok(mid) else (lo, mid)
+    return sig4(lo)
+
+BITS_HEADER = """import FORS.Certificates.Build
+import FORS.Certificates.ClosingBits
+
+/-! Certificates of the FORS lifetimes at %d bits, total height %d (generated by
+`scripts/fors_certificates.py emit-bits`, checked by the kernel with `decide +kernel`, exact rational
+arithmetic, no `native_decide`). A target of %d bits constrains only the budgets `q < 2^%d`, all of them
+small: for each configuration, a Poisson table up to `n1 = %d`, the small-route option of one Chernoff
+factor (`.F`) at baseline `ρ / 2^128`, the near certificate and `checkSmallS` at `qh = 2^%d`
+(`ClosingBits.lean`). The tables, the options and the near certificates are rebuilt from their scalars
+(`poisOf`, `buildOpt`, `buildOptN`) and pass their checkers by construction (`Build.lean`). A layered key of
+24 trees of height 10 uses the full key's certificate: the small route does not depend on key generation. -/
+
+namespace FORS.Security.H0
+
+set_option maxRecDepth 1000000
+set_option maxHeartbeats 0
+-- one check at a time: with asynchronous elaboration the memory of the finished checks is kept
+set_option Elab.async false
+"""
+
+def emit_bits(certs, path, bits):
+    out = [BITS_HEADER % (bits, certs[0]['h'], bits, bits, NMAX, bits)]
+    for c in certs:
+        if c.get('reuse'):
+            continue
+        set_config(c['h'], c['shape'], c['b'], c['k'], c['a'])
+        b, N, H, k, a = c['b'], c['N'], c['h'], c['k'], c['a']
+        tag = '%d_%s' % (bits, tag_of(c))
+        out.append('/-- Poisson table, %s, %d bits. -/' % (describe(c), bits))
+        out.append('def tab%s : PoisT := %s\n' % (tag, lean_tab(c['t'])))
+        out.append('theorem tab%s_ok : checkPT tab%s = true := checkPT_poisOf (by decide +kernel)\n' % (tag, tag))
+        out.append('theorem rate%s_ok : checkRate %d %d %d %d tab%s = true := by decide +kernel\n'
+                   % (tag, H, b, N, c['qh'], tag))
+        out.append('/-- The small-route option at baseline `ρ / 2^128`. -/')
+        out.append('def small%s : Opt := %s\n' % (tag, lean_opt(b, 'tab' + tag, c['t'], c['o'])))
+        out.append('theorem small%s_ok : checkOpt %d %d %d %d tab%s small%s = true :=\n    checkOptF_build (by decide +kernel)\n'
+                   % (tag, H, b, k, a, tag, tag))
+        out.append('/-- The near certificate. -/')
+        out.append('def near%s : OptN := %s\n' % (tag, lean_optN(b, 'tab' + tag, c['t'], c['on'])))
+        out.append('theorem near%s_ok : checkOptN %d %d %d tab%s near%s = true :=\n    checkOptN_build (by decide +kernel)\n'
+                   % (tag, H, k, a, tag, tag))
+        out.append('/-- The plain rate `ρ`. -/')
+        out.append('def rho%s : ℚ := %s\n' % (tag, q(c['rho'])))
+        out.append('theorem check%s_ok : ForsPotential.checkSmallS %d %d %d %d %d %d rho%s small%s.cthr small%s.B\n'
+                   '    ((2 ^ %d * near%s.En : ℚ) / 2) = true := by decide +kernel\n'
+                   % (tag, H, b, a, N, c['qh'], bits, tag, tag, tag, b, tag))
+    out.append('end FORS.Security.H0\n')
+    open(path, 'w').write('\n'.join(out))
+
+LIFETIMES_BITS_HEADER = """%s
+
+/-! **Proofs of the FORS lifetimes at %d bits** (generated by `scripts/fors_certificates.py emit-bits`): one
+theorem per configuration, `ForsPotential.det_bitsS` (`Certificates/ClosingBits.lean`) applied to the
+configuration's small-route certificate (`Certificates/Bits%d/H*.lean`). `Main.lean` states each of them
+again and proves it with the theorem here. -/
+
+namespace FORS.Lifetimes
+
+open Security ForsPotential
+"""
+
+def emit_lifetimes_bits(certs, path, bits):
+    heights = sorted({c['h'] for c in certs})
+    out = [LIFETIMES_BITS_HEADER % ('\n'.join('import FORS.Certificates.Bits%d.H%d' % (bits, h) for h in heights),
+                                    bits, bits)]
+    for c in certs:
+        b, N, H, k, a = c['b'], c['N'], c['h'], c['k'], c['a']
+        bt = '%d_%s' % (bits, tag_of(c['base']))
+        att = attack_bits(H, c['shape'], b, k, a, bits)
+        out.append("/-- %s, %d bits (%.2f%% of the cover attack's %.5g at %d bits). -/"
+                   % (upper1(describe(c)), bits, 100.0 * N / att, att, bits))
+        out.append('theorem %s_bits%d : SecurityBits (%s) %d :=' % (pname(c), bits, lean_params(c), bits))
+        out.append('  @det_bitsS (%s) (by decide) %d %d %d %d %d %d (by decide) (by decide) (by decide) (by decide)\n'
+                   '    (by decide) %d\n'
+                   '    H0.rho%s H0.tab%s H0.small%s H0.near%s H0.tab%s_ok H0.rate%s_ok H0.small%s_ok\n'
+                   '    H0.near%s_ok H0.check%s_ok\n'
+                   % (lean_params(c), H, b, k, a, N, bits, c['qh'], bt, bt, bt, bt, bt, bt, bt, bt, bt))
+    out.append('end FORS.Lifetimes\n')
+    open(path, 'w').write('\n'.join(out))
+
+# Limits at fewer bits, by bits: (h, shape, b, k, a) -> N, the largest N certified by `maxn-bits` (bisection),
+# rounded down to four significant digits. A layered key of 24 trees of height 10 has the full key's limit.
+PARAMS_BITS = {100: {
+    (20, 'pruned', 20, 24, 10): 51330000,
+    (20, 'pruned', 14, 24, 10): 987800,
+    (20, 'pruned', 13, 24, 10): 511100,
+    (20, 'pruned', 12, 24, 10): 264400,
+    (20, 'pruned', 10, 24, 10): 70800,
+    (20, 'pruned', 8, 24, 10): 18940,
+    (22, 'pruned', 22, 24, 10): 205300000,
+    (22, 'pruned', 20, 24, 10): 55040000,
+    (22, 'pruned', 14, 24, 10): 1057000,
+    (22, 'pruned', 13, 24, 10): 547400,
+    (22, 'pruned', 12, 24, 10): 283200,
+    (22, 'pruned', 10, 24, 10): 75780,
+    (22, 'pruned', 8, 24, 10): 20270,
+    (24, 'pruned', 24, 24, 10): 821300000,
+    (24, 'pruned', 20, 24, 10): 59000000,
+    (24, 'pruned', 14, 24, 10): 1132000,
+    (24, 'pruned', 13, 24, 10): 586000,
+    (24, 'pruned', 12, 24, 10): 303100,
+    (24, 'pruned', 10, 24, 10): 81090,
+    (24, 'pruned', 8, 24, 10): 21690,
+    (24, 'layered', 24, 23, 9): 296100000,
+    (24, 'layered', 24, 19, 9): 126800000,
+    (26, 'pruned', 26, 24, 10): 3285000000,
+    (26, 'pruned', 20, 24, 10): 63210000,
+    (26, 'pruned', 14, 24, 10): 1212000,
+    (26, 'pruned', 13, 24, 10): 627100,
+    (26, 'pruned', 12, 24, 10): 324300,
+    (26, 'pruned', 10, 24, 10): 86760,
+    (26, 'pruned', 8, 24, 10): 23200,
+    (28, 'pruned', 28, 24, 10): 13140000000,
+    (28, 'pruned', 20, 24, 10): 67710000,
+    (28, 'pruned', 14, 24, 10): 1297000,
+    (28, 'pruned', 13, 24, 10): 671000,
+    (28, 'pruned', 12, 24, 10): 347000,
+    (28, 'pruned', 10, 24, 10): 92800,
+    (28, 'pruned', 8, 24, 10): 24810,
+}}
+
+def configs_bits(bits):
+    """(h, shape, b, k, a, N) of every configuration at `bits` bits: the pruned keys, then the layered keys (more
+    trees first), by height"""
+    out = []
+    for h in HEIGHTS:
+        for (b, _, _) in PARAMS.get(h, []):
+            out.append((h, 'pruned', b, 24, 10, PARAMS_BITS[bits].get((h, 'pruned', b, 24, 10))))
+        lay = sorted([key for key in list(LAYERED) + list(SW_LAYERED) if key[0] == h], key=lambda e: -e[1])
+        for (hh, k, a) in lay:
+            N = PARAMS_BITS[bits].get((h, 'layered', h, k, a))
+            if N is None and (k, a) == (24, 10):
+                N = PARAMS_BITS[bits].get((h, 'pruned', h, 24, 10))
+            out.append((h, 'layered', h, k, a, N))
+    return out
+
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else None
     if cmd == 'check':
@@ -1844,5 +2087,35 @@ if __name__ == '__main__':
             if r: lo = mid
             else: hi = mid
         print('max N in [%d, %d) (2^%.5f)' % (lo, hi, math.log2(lo)), flush=True)
+    elif cmd == 'maxn-bits':
+        # maxn-bits BITS H SHAPE B [K A]: the largest N at BITS bits, four significant digits
+        bits, h, shape, b = int(sys.argv[2]), int(sys.argv[3]), sys.argv[4], int(sys.argv[5])
+        k, a = (int(sys.argv[6]), int(sys.argv[7])) if len(sys.argv) > 7 else (24, 10)
+        N = maxn_bits(h, shape, b, k, a, bits)
+        att = attack_bits(h, shape, b, k, a, bits)
+        print('bits %d H %d %s b %d k %d a %d: N %d (%.3f%% of the attack %d)' % (bits, h, shape, b, k, a, N, 100.0 * N / att, att), flush=True)
+    elif cmd == 'emit-bits':
+        # emit-bits BITS: write FORS/Certificates/BitsBITS/H*.lean and FORS/LifetimesBITS.lean
+        bits = int(sys.argv[2])
+        certs, full = [], {}
+        for (h, shape, b, k, a, N) in configs_bits(bits):
+            assert N is not None, ('no limit at %d bits' % bits, h, shape, b, k, a)
+            if shape == 'layered' and (k, a) == (24, 10) and h in full and full[h]['N'] == N:
+                c = dict(full[h]); c.update(shape='layered', d=3, reuse=True, base=full[h])
+                certs.append(c)
+                continue
+            set_config(h, shape, b, k, a)
+            c = certify_bits(b, N, bits)
+            assert c is not None, (h, shape, b, k, a, N)
+            c['base'] = c
+            if shape == 'pruned' and b == h:
+                full[h] = c
+            certs.append(c)
+        d = os.path.join(ROOT, 'FORS', 'Certificates', 'Bits%d' % bits)
+        os.makedirs(d, exist_ok=True)
+        for h in sorted({c['h'] for c in certs}):
+            emit_bits([c for c in certs if c['h'] == h], os.path.join(d, 'H%d.lean' % h), bits)
+        emit_lifetimes_bits(certs, os.path.join(ROOT, 'FORS', 'Lifetimes%d.lean' % bits), bits)
+        print('written')
     else:
         sys.exit(__doc__)

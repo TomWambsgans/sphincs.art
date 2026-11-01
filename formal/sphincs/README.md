@@ -3,7 +3,8 @@
 **Status: the leanSphincs signer has 127 bits of classical SUF-CMA security in the random-oracle
 model in each of its configurations, at the signature limits below: one theorem per height, shape and kept
 subtree height (and forest size for the layered keys of 2^24 and 2^26), 39 in all, stated together in [Main.lean](LeanForest/Main.lean); the FORS variant has its own 39 in
-[FORS/Main.lean](FORS/Main.lean).** The
+[FORS/Main.lean](FORS/Main.lean). Both also have 100 bits at larger limits, within 0.1% of the cover attack at
+100 bits (39 more theorems each, below).** The
 proof uses only `propext`, `Classical.choice` and `Quot.sound`: [Axioms.lean](LeanForest/Axioms.lean)
 pins the main theorems to their axioms and checks that no declaration of the library uses another.
 
@@ -101,11 +102,68 @@ of the forest's attack. They are 11–16% below the forest's limits, except for 
 through a third route between the small and the large one, the survival-weighted route
 (`ForsPotential.det_bitsF3`, [FORS.md](FORS.md)).
 
+## Proved lifetimes at 100 bits
+
+The same claim at a lower target, `Secure100` (forgery probability at most `q / 2^100`), for the same 39
+configurations of each variant: `requestedSecurity100` in [Main.lean](LeanForest/Main.lean) and in
+[FORS/Main.lean](FORS/Main.lean), one theorem each (e.g. `h24_pruned12_100`). A target of 100 bits
+constrains only the budgets `q < 2^100`, which the small route alone covers: `ForestPotential.det_bitsS`
+([Certificates/ClosingBits](LeanForest/Certificates/ClosingBits.lean), and `ForsPotential.det_bitsS` for
+FORS) is the small-route bound `det_smallF` compared with `q / 2^bits` instead of `q / 2^127`, with one
+rational check per configuration (`checkSmallS`, [Certificates/Bits100](LeanForest/Certificates/Bits100)).
+The generic searches that cost the 127-bit proofs up to 20% (about `2^-127` per query) are `2^-27` of
+this budget, so the limits are the cover attack at 100 bits to within 0.1%: the signature count at
+which one digest query covers an instance with probability `2^-100` (Poisson loads for the forest,
+exact binomial loads for FORS). The moment tables reach `n ≤ 255` signatures per instance for these
+loads.
+
+Forest:
+
+| lifetime | h | full key (b = h) | b = 20 | b = 14 | b = 13 | b = 12 | b = 10 | b = 8 | layered (h ≥ 24) |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2^24 | 20 | 59,850,000 | — | 1,135,000 | 585,900 | 302,300 | 80,480 | 21,410 | 303,300,000 |
+| 2^26 | 22 | 239,400,000 | 63,890,000 | 1,209,000 | 624,000 | 321,900 | 85,650 | 22,770 | 603,400,000 |
+| 2^28 | 24 | 957,700,000 | 68,150,000 | 1,287,000 | 664,200 | 342,600 | 91,100 | 24,210 | 957,700,000 |
+| 2^30 | 26 | 3,830,000,000 | 72,650,000 | 1,370,000 | 706,700 | 364,400 | 96,860 | 25,730 | 3,830,000,000 |
+| 2^32 | 28 | 15,320,000,000 | 77,400,000 | 1,457,000 | 751,500 | 387,400 | 102,900 | 27,340 | 15,320,000,000 |
+
+As a share of the cover attack at 100 bits:
+
+| lifetime | h | full key (b = h) | b = 20 | b = 14 | b = 13 | b = 12 | b = 10 | b = 8 | layered (h ≥ 24) |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2^24 | 20 | 99.99% | — | 99.97% | 99.99% | 99.98% | 99.99% | 99.99% | 100.00% |
+| 2^26 | 22 | 99.99% | 99.99% | 99.96% | 99.99% | 99.99% | 100.00% | 99.97% | 99.99% |
+| 2^28 | 24 | 100.00% | 99.99% | 99.94% | 99.99% | 100.00% | 100.00% | 99.98% | 100.00% |
+| 2^30 | 26 | 99.97% | 99.99% | 99.97% | 100.00% | 100.00% | 100.00% | 99.98% | 99.97% |
+| 2^32 | 28 | 99.97% | 99.99% | 99.95% | 99.99% | 99.99% | 99.96% | 100.00% | 99.97% |
+
+FORS variant:
+
+| lifetime | h | full key (b = h) | b = 20 | b = 14 | b = 13 | b = 12 | b = 10 | b = 8 | layered (h ≥ 24) |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2^24 | 20 | 51,330,000 | — | 987,800 | 511,100 | 264,400 | 70,800 | 18,940 | 126,800,000 |
+| 2^26 | 22 | 205,300,000 | 55,040,000 | 1,057,000 | 547,400 | 283,200 | 75,780 | 20,270 | 296,100,000 |
+| 2^28 | 24 | 821,300,000 | 59,000,000 | 1,132,000 | 586,000 | 303,100 | 81,090 | 21,690 | 821,300,000 |
+| 2^30 | 26 | 3,285,000,000 | 63,210,000 | 1,212,000 | 627,100 | 324,300 | 86,760 | 23,200 | 3,285,000,000 |
+| 2^32 | 28 | 13,140,000,000 | 67,710,000 | 1,297,000 | 671,000 | 347,000 | 92,800 | 24,810 | 13,140,000,000 |
+
+As a share of the FORS cover attack at 100 bits:
+
+| lifetime | h | full key (b = h) | b = 20 | b = 14 | b = 13 | b = 12 | b = 10 | b = 8 | layered (h ≥ 24) |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2^24 | 20 | 99.99% | — | 100.00% | 99.98% | 99.96% | 99.99% | 99.92% | 99.98% |
+| 2^26 | 22 | 99.98% | 99.99% | 99.90% | 100.00% | 100.00% | 99.98% | 99.94% | 99.99% |
+| 2^28 | 24 | 99.99% | 99.99% | 99.93% | 100.00% | 99.99% | 99.98% | 99.96% | 99.99% |
+| 2^30 | 26 | 99.99% | 99.98% | 99.96% | 99.99% | 99.97% | 99.99% | 99.96% | 99.99% |
+| 2^32 | 28 | 99.99% | 100.00% | 99.96% | 99.99% | 99.99% | 99.99% | 99.96% | 99.99% |
+
 ## Checked claims
 
 | Claim | Theorem / file |
 | --- | --- |
 | **127-bit SUF-CMA security at the limits above** | `requestedSecurity`, [Main](LeanForest/Main.lean) |
+| **100-bit SUF-CMA security at the limits at 100 bits** | `requestedSecurity100`, [Main](LeanForest/Main.lean) |
+| At `bits ≤ 127` bits, one small-route check at `qh ≥ 2^bits − 1` suffices | `ForestPotential.det_bitsS`, [Certificates/ClosingBits](LeanForest/Certificates/ClosingBits.lean); certificates in [Certificates/Bits100](LeanForest/Certificates/Bits100) |
 | The bound follows from rational checks on two budget routes, for any height, shape and hash | `ForestPotential.det_bitsFH`, [Certificates/Closing](LeanForest/Certificates/Closing.lean); certificates in [Certificates](LeanForest/Certificates) |
 | The deterministic signer reduces to a seed-free game of an adversary that never repeats a message | `Det.forgeAdvantage_le_seedFree`, [Reduction/SeedElimination](LeanForest/Reduction/SeedElimination.lean) |
 | An accepted forgery is classified layer by layer, from the top | `SignatureWitness.accepted_full_classification`, [Classification/Accepted](LeanForest/Classification/Accepted.lean) |
@@ -126,7 +184,7 @@ env LEAN_NUM_THREADS=1 nice -n 19 lake build LeanForest FORS
 ```
 
 No `sorry`, `native_decide`, or new axioms are used. The certificates of one height take about
-30–50 s and 1 GB of memory (forest), or 2.5–4 min and 7 GB (FORS).
+30–50 s and 1 GB of memory (forest), or 2.5–4 min and 7 GB (FORS); those at 100 bits, 30–55 s.
 
 The numeric certificates are generated by `python3 scripts/forest_certificates.py emit` (pure
 Python, exact rationals), which rewrites `LeanForest/Certificates/H*.lean` and
@@ -134,6 +192,8 @@ Python, exact rationals), which rewrites `LeanForest/Certificates/H*.lean` and
 by hand, states them); the kernel re-checks them with `decide +kernel` during the build.
 `python3 scripts/fors_certificates.py emit-lifetimes` does the same for `FORS`, with the three-route
 certificate `Certificates/H24SW.lean` (plain emit writes only the certificates), from the closed-form moments of a FORS tree instead of a codeword table. `scripts/forest_table.py` writes the codeword table.
+`emit-bits 100` (both scripts) writes the certificates at 100 bits, `Certificates/Bits100/H*.lean` and
+`Lifetimes100.lean`, from the limits `PARAMS_BITS` that `maxn-bits` found.
 `lake env lean scripts/Reach.lean` writes `reach.txt`, which declarations the pinned theorems and
 the cited names reach; `python3 scripts/doc_check.py` then checks that these docs cite only existing
 files and Lean names.

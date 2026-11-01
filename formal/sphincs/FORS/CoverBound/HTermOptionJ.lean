@@ -270,7 +270,7 @@ def okJ (H b k a : ℕ) (t : PoisT) (o : OptJ) : Bool :=
     decide (∀ j < o.m + 1, 0 < o.θ j ∧ o.θ j * o.c1 < 2 ^ o.s) &&
     decide (0 ≤ o.cthr) && decide (1 ≤ o.nb) &&
     decide (o.nb ^ k * o.c1.den ≤ o.c1.num.toNat * 2 ^ (H + a * k)) &&
-    decide (o.T ≤ k) && decide (∀ n ∈ o.nx, 2 ≤ n) && decide (1 ≤ t.n1) && decide (t.n1 ≤ 150) &&
+    decide (o.T ≤ k) && decide (∀ n ∈ o.nx, 2 ≤ n) && decide (1 ≤ t.n1) && decide (t.n1 ≤ 255) &&
     decide (0 ≤ (gtJ H k a t o).getD 0 0) &&
     decide (∀ j < o.m + 1, 0 ≤ (atJ H k a t o j).getD 0 0 ∧ 0 ≤ (htJ H k a t o j).getD 0 0) &&
     decide (0 ≤ EgJ H b k a t o) && decide (∀ j < o.m + 1, 0 ≤ EaJ H b k a t o j ∧ 0 ≤ EhJ H b k a t o j)
@@ -282,7 +282,7 @@ def checkOptJ (H b k a : ℕ) (t : PoisT) (o : OptJ) : Bool :=
 theorem okJ_parts {H b k a : ℕ} {t : PoisT} {o : OptJ} (h : okJ H b k a t o = true) :
     0 < o.c1 ∧ 1 ≤ o.ths.length ∧ (∀ j < o.m + 1, 0 < o.θ j ∧ o.θ j * o.c1 < 2 ^ o.s) ∧
       0 ≤ o.cthr ∧ 1 ≤ o.nb ∧ o.nb ^ k * o.c1.den ≤ o.c1.num.toNat * 2 ^ (H + a * k) ∧ o.T ≤ k ∧
-      (∀ n ∈ o.nx, 2 ≤ n) ∧ 1 ≤ t.n1 ∧ t.n1 ≤ 150 ∧ 0 ≤ (gtJ H k a t o).getD 0 0 ∧
+      (∀ n ∈ o.nx, 2 ≤ n) ∧ 1 ≤ t.n1 ∧ t.n1 ≤ 255 ∧ 0 ≤ (gtJ H k a t o).getD 0 0 ∧
       (∀ j < o.m + 1, 0 ≤ (atJ H k a t o j).getD 0 0 ∧ 0 ≤ (htJ H k a t o j).getD 0 0) ∧
       0 ≤ EgJ H b k a t o ∧ (∀ j < o.m + 1, 0 ≤ EaJ H b k a t o j ∧ 0 ≤ EhJ H b k a t o j) := by
   simp only [okJ, Bool.and_eq_true, decide_eq_true_eq] at h
@@ -416,7 +416,7 @@ theorem exp_le_expAtN (θ cap : ℚ) (E Y s P : ℕ) (hθ : 0 < θ) (hcap : 0 < 
 
 /-- The excess part by the moment tables, in integers over `2^191`. -/
 theorem avgN_gS_le_mom {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b) (hk : forsTrees = k)
-    (ha : forsHeight = a) (c1 : ℚ) (hc1 : 0 < c1) (n : ℕ) (hn : n ≤ 150) :
+    (ha : forsHeight = a) (c1 : ℚ) (hc1 : 0 < c1) (n : ℕ) (hn : n ≤ 255) :
     avgN (gS (c1 : ℝ)) n 0 ≤ ENNReal.ofReal ((((min (cdivZ (((p1N a n ^ k : ℕ) : ℤ) * 2 ^ 191) (p2 (H + 128 * k)))
       (cdivZ (((p2N a n ^ k * c1.den : ℕ) : ℤ) * 2 ^ 191) (p2 (2 * H + 128 * k) * 4 * c1.num)) : ℤ) : ℚ) /
         2 ^ 191 : ℚ) : ℝ) := by
@@ -479,7 +479,7 @@ theorem avgN_gS_le_mom {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeigh
 /-- The Chernoff factor by the moment tables, in integers over `2^128`. -/
 theorem avgN_hS_le_mom {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b) (hk : forsTrees = k)
     (ha : forsHeight = a) (cap θ A2 : ℚ) (hcap : 0 < cap) (hθ : 0 < θ)
-    (hA2 : (Real.exp ((θ : ℝ) * cap) - 1 - (θ : ℝ) * cap) / (cap : ℝ) ^ 2 ≤ (A2 : ℝ)) (n : ℕ) (hn : n ≤ 150) :
+    (hA2 : (Real.exp ((θ : ℝ) * cap) - 1 - (θ : ℝ) * cap) / (cap : ℝ) ^ 2 ≤ (A2 : ℝ)) (n : ℕ) (hn : n ≤ 255) :
     avgN (hS (cap : ℝ) (θ : ℝ)) n 0 ≤ 1 + ENNReal.ofReal ((((cdivZ ((θ.num * A2.den * ((p1N a n ^ k : ℕ) : ℤ) * p2 H +
       A2.num * θ.den * ((p2N a n ^ k : ℕ) : ℤ)) * 2 ^ 128) (θ.den * A2.den * p2 (2 * H + 128 * k)) : ℤ) : ℚ) /
         2 ^ 128 : ℚ) : ℝ) := by
@@ -607,7 +607,7 @@ theorem okJ_facts {H b k a : ℕ} {t : PoisT} {o : OptJ} (ho : okJ H b k a t o =
 
 /-- **The entries of `ḡ`.** -/
 theorem avgN_gS_le_entry {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b) (hk : forsTrees = k)
-    (ha : forsHeight = a) {t : PoisT} {o : OptJ} (ho : okJ H b k a t o = true) (n : ℕ) (hn : n ≤ 150) :
+    (ha : forsHeight = a) {t : PoisT} {o : OptJ} (ho : okJ H b k a t o = true) (n : ℕ) (hn : n ≤ 255) :
     avgN (gS (o.c1 : ℝ)) n 0 ≤ ENNReal.ofReal ((((gEntryJ H k a o n : ℤ) : ℚ) / 2 ^ 191 : ℚ) : ℝ) := by
   obtain ⟨hc1, -, -, -, -, -, hT, hnx, -⟩ := okJ_parts ho
   unfold gEntryJ
@@ -690,7 +690,7 @@ theorem exp_cap_le {H b k a : ℕ} {t : PoisT} {o : OptJ} (ho : okJ H b k a t o 
 /-- **The entries of `h̄_j - 1`.** -/
 theorem avgN_hS_le_entry {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b) (hk : forsTrees = k)
     (ha : forsHeight = a) {t : PoisT} {o : OptJ} (ho : okJ H b k a t o = true) (j : ℕ) (hj : j < o.m + 1)
-    (n : ℕ) (hn : n ≤ 150) :
+    (n : ℕ) (hn : n ≤ 255) :
     avgN (hS (capQ H k a o j : ℝ) (o.θ j : ℝ)) n 0 ≤
       1 + ENNReal.ofReal ((((hEntryJ H k a o t.P j n : ℤ) : ℚ) / 2 ^ 128 : ℚ) : ℝ) := by
   obtain ⟨-, -, -, -, -, -, hT, hnx, -⟩ := okJ_parts ho
@@ -801,7 +801,7 @@ theorem avgN_le_tab {φ : Multiset (FTree → FLeaf) → ℝ≥0∞} (c0 : ℝ�
 theorem avgN_gS_le_tabJ {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeight = b) (hk : forsTrees = k)
     (ha : forsHeight = a) {t : PoisT} {o : OptJ} (ho : okJ H b k a t o = true) (n : ℕ) :
     avgN (gS (o.c1 : ℝ)) n 0 ≤ ENNReal.ofReal ((leafQ (gtJ H k a t o) (JgJ H k a t o) n : ℚ) : ℝ) := by
-  obtain ⟨hc1, -, -, -, -, -, -, -, h1, h150, hg0, -⟩ := okJ_parts ho
+  obtain ⟨hc1, -, -, -, -, -, -, -, h1, h255, hg0, -⟩ := okJ_parts ho
   have hc1' : (0 : ℝ) < (o.c1 : ℝ) := by exact_mod_cast hc1
   have h := avgN_le_tab (φ := gS (o.c1 : ℝ)) 0 (P := 191) (gEntryJ H k a o) (κQ H) h1 hg0
     (fun n hn => by rw [zero_add]; exact avgN_gS_le_entry hH hb hk ha ho n (by omega))
@@ -843,7 +843,7 @@ theorem avgN_hS_le_tabJ {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeig
     (n : ℕ) :
     avgN (hS (capQ H k a o j : ℝ) (o.θ j : ℝ)) n 0 ≤
       1 + ENNReal.ofReal ((leafQ (htJ H k a t o j) (JhJ H k a t o j) n : ℚ) : ℝ) := by
-  obtain ⟨-, -, -, -, -, -, -, -, h1, h150, -, hht0, -⟩ := okJ_parts ho
+  obtain ⟨-, -, -, -, -, -, -, -, h1, h255, -, hht0, -⟩ := okJ_parts ho
   obtain ⟨-, hθ, hcap, -, -, hs⟩ := okJ_facts ho j hj
   exact avgN_le_tab (φ := hS (capQ H k a o j : ℝ) (o.θ j : ℝ)) 1 (P := 128) (hEntryJ H k a o t.P j)
     ((eHN H k a o t.P j : ℚ) / 2 ^ t.P - 1) h1 (hht0 j hj).2
@@ -885,7 +885,7 @@ theorem hTermO_le_optJ {H b k a : ℕ} (hH : totalHeight = H) (hb : subtreeHeigh
     hTermO (Finset.univ : Finset View) w lam N q (ForsPotential.excess b0) ≤ ENNReal.ofReal (o.B : ℝ) := by
   simp only [checkOptJ, Bool.and_eq_true, decide_eq_true_eq] at ho
   obtain ⟨hok, hB⟩ := ho
-  obtain ⟨hc1, hlen, hθs, hcthr, hnb, hc2n, hT, hnx, h1, h150, hg0, hah0, hEg0, hEah0⟩ := okJ_parts hok
+  obtain ⟨hc1, hlen, hθs, hcthr, hnb, hc2n, hT, hnx, h1, h255, hg0, hah0, hEg0, hEah0⟩ := okJ_parts hok
   have hlw : lam * w ≠ ⊤ := ne_top_of_le_ne_top ENNReal.one_ne_top (mul_le_one' hlam hw)
   have hcard : Fintype.card (Fin (2 ^ subtreeHeight)) = 2 ^ b := by rw [Fintype.card_fin, hb]
   set α : ℝ≥0 := ((2 : ℝ≥0) ^ b)⁻¹ with hαdef

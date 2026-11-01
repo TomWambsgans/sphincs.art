@@ -84,6 +84,12 @@ the SW route up to about `2^121.97`, the large route above. The SW route's certi
 ([Certificates/H24SW](FORS/Certificates/H24SW.lean), `SWRoute.checkCoverSW`) is 7 entries, each with
 its rate `ρ`, its cover and near options, and a certified tail of the near forecast.
 
+At 100 bits (`Secure100`, collected by `requestedSecurity100`, e.g. `h24_pruned12_100`) every
+configuration takes the small route alone up to `q_h = 2^100`: `ForsPotential.det_bitsS`
+([Certificates/ClosingBits](FORS/Certificates/ClosingBits.lean)) with one option of one Chernoff factor
+per configuration ([Certificates/Bits100](FORS/Certificates/Bits100)). The limits, in
+[README.md](README.md), are 99.9% to 100% of the FORS cover attack at 100 bits (exact binomial loads).
+
 ## What the proof changes
 
 The route of [PROOF.md](PROOF.md) is unchanged. Two steps differ.

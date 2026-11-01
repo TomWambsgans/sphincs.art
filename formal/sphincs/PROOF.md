@@ -1,7 +1,7 @@
 # Proof route
 
 `LeanForest.requestedSecurity` ([Main.lean](LeanForest/Main.lean)) proves 127 bits of SUF-CMA security for `Seeded.sign` in
-each configuration of [README.md](README.md). This file documents the route. Everything below holds
+each configuration of [README.md](README.md), and `LeanForest.requestedSecurity100` 100 bits at larger limits (step 7). This file documents the route. Everything below holds
 for every `Params` (height `h ≤ 28`, `d` layers, kept subtree height `b`, `T ≤ 8` forest coordinates,
 signature limit `N`); only
 the last step, the certificates, is numeric.
@@ -179,6 +179,17 @@ directory each:
    significant digits. A layered key with 8 coordinates is certified like the full key of its height with
    its own, smaller, keygen credit, which does not change the limit; with 6 or 7 coordinates (the uniform
    keys of `2^24` and `2^26`) it has its own search.
+
+7. **Fewer bits.** At a target of `bits ≤ 127` bits only the budgets q < 2^bits matter: above, q / 2^bits
+   ≥ 1. `ForestPotential.det_bitsS` ([Certificates/ClosingBits](LeanForest/Certificates/ClosingBits.lean))
+   takes the small route alone, at q_h = 2^bits, and compares its closed form with q / 2^bits:
+   `checkSmallS` is `checkSmallF` with the right-hand side 2^(128 − bits) in place of 2. At 100 bits
+   (`requestedSecurity100`, [Certificates/Bits100](LeanForest/Certificates/Bits100),
+   [Lifetimes100.lean](LeanForest/Lifetimes100.lean)) the generic terms of the small route (ρ ≈ 3/2, the
+   coin and the near term) take at most 2^-18.9 of the budget 2^28, and the cover term is the Poisson
+   cover rate itself up to the rounding of the tables, so every limit is within 0.1% of the cover
+   attack at 100 bits. The loads there reach 110 signatures per instance on average, which is why the
+   moment tables run to n = 255.
 
 ## Gap to the best known attack
 

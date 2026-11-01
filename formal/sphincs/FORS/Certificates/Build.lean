@@ -132,7 +132,7 @@ def nZ (H k a n1 : ℕ) : List ℤ :=
   zipTab n1 (fun x _ : ℕ => cdivZ (((k * x ^ (k - 1) : ℕ) : ℤ) * 2 ^ 191) (p2 (H + 128 * (k - 1))))
     (P1L a) (P1L a)
 
-theorem gZ_bound {H k a n1 n : ℕ} {o : OptF} (hc : 0 < o.c1) (hn1 : n1 ≤ 150) (hn : n < n1 + 1) :
+theorem gZ_bound {H k a n1 n : ℕ} {o : OptF} (hc : 0 < o.c1) (hn1 : n1 ≤ 255) (hn : n < n1 + 1) :
     gBound H k a o n ≤ ((gZ H k a n1 o.c1).getD n 0 : ℚ) / 2 ^ 191 := by
   have l1 : n1 + 1 ≤ (P1L a).length := by rw [length_P1L]; omega
   have l2 : n1 + 1 ≤ (P2L a).length := by rw [length_P2L]; omega
@@ -150,7 +150,7 @@ theorem gZ_bound {H k a n1 n : ℕ} {o : OptF} (hc : 0 < o.c1) (hn1 : n1 ≤ 150
     have : (0 : ℚ) < o.c1.den := by exact_mod_cast o.c1.den_pos
     field_simp; ring
 
-theorem hZ_bound {H k a n1 n : ℕ} {o : OptF} {E : ℤ} (hE : o.eC - 1 ≤ (E : ℚ) / 2 ^ 128) (hn1 : n1 ≤ 150)
+theorem hZ_bound {H k a n1 n : ℕ} {o : OptF} {E : ℤ} (hE : o.eC - 1 ≤ (E : ℚ) / 2 ^ 128) (hn1 : n1 ≤ 255)
     (hn : n < n1 + 1) : hBound H k a o n ≤ ((hZ H k a n1 o.θ o.A2 E).getD n 0 : ℚ) / 2 ^ 128 := by
   have l1 : n1 + 1 ≤ (P1L a).length := by rw [length_P1L]; omega
   have l2 : n1 + 1 ≤ (P2L a).length := by rw [length_P2L]; omega
@@ -166,7 +166,7 @@ theorem hZ_bound {H k a n1 n : ℕ} {o : OptF} {E : ℤ} (hE : o.eC - 1 ≤ (E :
   have : (0 : ℚ) < o.A2.den := by exact_mod_cast o.A2.den_pos
   field_simp; ring
 
-theorem nZ_bound {H k a n1 n : ℕ} (hn1 : n1 ≤ 150) (hn : n < n1 + 1) :
+theorem nZ_bound {H k a n1 n : ℕ} (hn1 : n1 ≤ 255) (hn : n < n1 + 1) :
     nBound H k a n ≤ ((nZ H k a n1).getD n 0 : ℚ) / 2 ^ 191 := by
   have l1 : n1 + 1 ≤ (P1L a).length := by rw [length_P1L]; omega
   rw [nZ, getD_zipTab (a := 0) (b := 0) l1 l1 hn, nBound, getD_tab (P1L_eq a) (by omega)]
@@ -194,7 +194,7 @@ def buildOpt (H b k a : ℕ) (t : PoisT) (c1 θ : ℚ) (s : ℕ) (cthr : ℚ) : 
 /-- What `checkOptF` needs beyond the construction. -/
 def buildOk (t : PoisT) (o : OptF) : Bool :=
   decide (0 < o.c1) && decide (0 < o.θ) && decide (0 ≤ o.cthr) && decide (o.θ * o.c1 < 2 ^ o.s) &&
-    decide (1 ≤ t.n1) && decide (t.n1 ≤ 150) && decide (0 ≤ o.gt.getD 0 0) && decide (0 ≤ o.ht.getD 0 0) &&
+    decide (1 ≤ t.n1) && decide (t.n1 ≤ 255) && decide (0 ≤ o.gt.getD 0 0) && decide (0 ≤ o.ht.getD 0 0) &&
     decide (0 ≤ o.Eg) && decide (0 ≤ o.Ee)
 
 /-- **A built option passes `checkOptF`.** -/
@@ -256,7 +256,7 @@ def buildOptN (H b k a : ℕ) (t : PoisT) : OptN :=
 
 /-- What `checkOptN` needs beyond the construction. -/
 def buildOkN (t : PoisT) (o : OptN) : Bool :=
-  decide (1 ≤ t.n1) && decide (t.n1 ≤ 150) && decide (0 ≤ o.nt.getD 0 0)
+  decide (1 ≤ t.n1) && decide (t.n1 ≤ 255) && decide (0 ≤ o.nt.getD 0 0)
 
 /-- **A built near certificate passes `checkOptN`.** -/
 theorem checkOptN_build {H b k a : ℕ} {t : PoisT} (h : buildOkN t (buildOptN H b k a t) = true) :
