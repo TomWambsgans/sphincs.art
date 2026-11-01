@@ -196,7 +196,6 @@ svg .fors polygon, svg .lyr polygon { fill: none; stroke: var(--tree); stroke-wi
 .cards .nw { white-space: nowrap; }
 .cmp .gone, .cmp .gone > * { display: none !important; }
 .cards .note { color: var(--muted); white-space: nowrap; font-size: 0.88em; }
-.cards .deg { color: var(--muted); font-size: 0.88em; white-space: nowrap; }   /* the limit at 100 bits, under the lifetime */
 .plain { font-variant-numeric: tabular-nums; }
 .plain td { white-space: nowrap; }
 .thr { margin-top: 0.5rem; }
@@ -339,7 +338,7 @@ footer a + a { margin-left: 1.25rem; }
     </header>
     <div class="params">
       <div class="toggles" id="toggles">
-        <span class="sl"><span id="tl-h">Lifetime</span><span class="info w dn" tabindex="0" role="button" aria-label="More information" data-tip="How many signatures can be made, at ≥ 127 bits of security in the ROM, [proven in Lean 4](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs). Security degrades gracefully beyond that: under each lifetime, the number of signatures that keep 100 bits, also proven in Lean 4.">i</span></span>
+        <span class="sl"><span id="tl-h">Lifetime</span><span class="info w dn" tabindex="0" role="button" aria-label="More information" data-tip="How many signatures can be made, at ≥ 127 bits of security in the ROM, [proven in Lean 4](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs). Security degrades gracefully beyond that.">i</span></span>
         <div class="seg" role="radiogroup" aria-labelledby="tl-h" data-key="lt"><button type="button" role="radio" data-val="24" aria-label="2 to the 24">2<sup>24</sup></button><button type="button" role="radio" data-val="26" aria-label="2 to the 26">2<sup>26</sup></button><button type="button" role="radio" data-val="28" aria-label="2 to the 28">2<sup>28</sup></button><button type="button" role="radio" data-val="30" aria-label="2 to the 30">2<sup>30</sup></button><button type="button" role="radio" data-val="32" aria-label="2 to the 32">2<sup>32</sup></button></div>
         <span class="sl"><span id="tl-shape">Mode</span><span class="info w dn" tabindex="0" role="button" aria-label="More information" data-tip="# Uniform&#10;Standard signing (the randomizer selects a random FTS among the 2ʰ possible ones).&#10;&#10;# Pruning&#10;Use a single, large, XMSS layer. Weak devices only construct a subtree of 2ᵇ leaves, and use pseudorandom nodes for the rest, and signing grinds until its index lands in it (An idea from [conduition](https://conduition.io/cryptography/hypertree-pruning/)). Verifier algo is unaffected.&#10;&#10;The risk of reusing a seed under different pruning parameters is fixed by deriving a second seed as H(seed ‖ parameters).&#10;&#10;Privacy: one can select the leaf indexes of the non-pruned FTS at (pseudo)random, but signing a lot will always eventually leak the pruning size. Partial remediation: keep a semi-trusted state S of the previously signed FTS, and when grinding lands on a FTS of S, accept it only with probability (2ᵇ − |S|) / (2ʰ − |S|), so that FTS repeat exactly as often as with a full tree. This essentially gives 2ᵇ⁻¹ signatures with no privacy leak. The state is semi-trusted, because an adversary controlling it can: leak the pruning size, and reduce the lifetime by a factor of 2, but nothing worse.">i</span></span>
         <div class="seg" role="radiogroup" aria-labelledby="tl-shape" data-key="shape"><button type="button" role="radio" data-val="layered">Uniform</button><button type="button" role="radio" data-val="pruned">Pruning</button></div>
@@ -1035,9 +1034,7 @@ footer a + a { margin-left: 1.25rem; }
   // an (i) with its tip (cls: more classes)
   function info(tip, cls) { return '<span class="info' + (cls || '') + '" tabindex="0" role="button" aria-label="More information" data-tip="' + tip + '">i</span>'; }
   var NOTE = 'https://github.com/TomWambsgans/sphincs.art/releases/download/doc-latest/leanSPHINCS.pdf';
-  var LIFE_TIP = '127 bits of security (ROM), [proved in Lean](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs). ' +
-    'Security then degrades gracefully: the second figure is how many signatures keep 100 bits, also proved in Lean, ' +
-    'within 0.1% of the best known attack';
+  var LIFE_TIP = '127 bits of security (ROM), [proved in Lean](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs)';
   // the two FTS, for the tip of the FTS variant
   function forestTip(T) { return '# WOTS forest\n' + T + ' trees of height 4. Each leaf hashes the top nodes of two subtrees of height 3 over WOTS keys of 6 chains of length 5, with target sum 5 ([paragraph 4](' + NOTE + '#page=8))\n(credit: Jonas Nick, [sig.golf](https://github.com/Layr-Labs/sig.golf/commit/3321b777a511a6b454aad7ab721e8ab1af21c4d0))'; }
   function forsTip(v) {
@@ -1056,8 +1053,11 @@ footer a + a { margin-left: 1.25rem; }
   }
   // a lifetime: the limit proved in Lean, to two significant digits rounded down (150K, 31M, 1.4B)
   function lifeOf(c) { return life1(isForest() ? c.lifetime : c.fors.lifetime); }
-  // the limit proved in Lean at 100 bits, a muted line under the lifetime
-  function deg(c) { return '<div class="deg">' + life1(isForest() ? c.lifetime100 : c.fors.lifetime100) + ' at 100 bits</div>'; }
+  // the limit proved in Lean at 100 bits, in the (i) next to a lifetime
+  function deg(c) {
+    return info('Beyond, security degrades gracefully: 100 bits up to ' + life1(isForest() ? c.lifetime100 : c.fors.lifetime100) +
+      ' signatures, also [proved in Lean](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs), within 0.1% of the best known attack');
+  }
   function life1(n) {
     var u = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']], q = Math.pow(10, Math.floor(Math.log10(n)) - 1);
     n = q >= 1 ? Math.floor(n / q + 1e-9) * q : Math.floor(n);
@@ -1218,9 +1218,9 @@ footer a + a { margin-left: 1.25rem; }
     [].forEach.call(document.querySelectorAll('.life-tip'), function (e) { e.setAttribute('data-tip', lifeTip); });
     document.querySelector('[data-f="life-0"]').closest('tr').classList.toggle('gone', lay_);
     document.querySelector('[data-f="life-all"]').closest('tr').classList.toggle('gone', !lay_);
-    set('life-all', mlab('Lifetime', lifeTip) + '<div>' + lifeOf(lay) + ' signatures</div>' + deg(lay));
-    set('life-same-1', mlab('Lifetime', lifeTip) + '<div>' + lifeOf(lay) + ' signatures</div>' + deg(lay));
-    set('life-same-2', mlab('Lifetime', lifeTip) + '<div>' + lifeOf(lay) + ' signatures</div>' + deg(lay));
+    set('life-all', mlab('Lifetime', lifeTip) + '<div>' + lifeOf(lay) + ' signatures' + deg(lay) + '</div>');
+    set('life-same-1', mlab('Lifetime', lifeTip) + '<div>' + lifeOf(lay) + ' signatures' + deg(lay) + '</div>');
+    set('life-same-2', mlab('Lifetime', lifeTip) + '<div>' + lifeOf(lay) + ' signatures' + deg(lay) + '</div>');
     devs.forEach(function (d, k) {
       var c = lay_ ? lay : cfg('pruned', d.b), what;
       var dev = d.dev + info((!d.host && Number.isInteger(Math.log2(d.rate)) ? pow2t(Math.log2(d.rate)) : rateK(d.rate)) +   // the exact rate used
@@ -1232,8 +1232,8 @@ footer a + a { margin-left: 1.25rem; }
       else if (c.b === c.h) what = 'full tree of height ' + c.h;
       else what = 'subtree of height ' + c.b;
       var t = function (n, r) { return '<span class="ex">' + time(n / (r || d.rate)) + '</span>'; };
-      set('life-' + k, mlab('Lifetime (pruned)', lifeTip) + '<div>' + lifeOf(c) + ' signatures' +
-        (what ? ' <span class="note">(' + what + ')</span>' : '') + '</div>' + deg(c));
+      set('life-' + k, mlab('Lifetime (pruned)', lifeTip) + '<div>' + lifeOf(c) + ' signatures' + deg(c) +
+        (what ? ' <span class="note">(' + what + ')</span>' : '') + '</div>');
       set('keygen-' + k, '<div class="hd"><span>' + fmt(c.keygen) + '&nbsp;' + unit() + '</span>' + t(c.keygen) + '</div>');
       var sv = c.fors.sign[d.kib], sn = isForest() ? c.sign[d.kib] : sv;
       set('sign-' + k, '<div class="hd"><span>' + vs(fmt(sv), fmt(c.sign[d.kib])) + '&nbsp;' + unit() + ' <span class="note">(' + d.cache + ' cache)</span></span>' + t(sn) + '</div>');
@@ -1253,8 +1253,7 @@ footer a + a { margin-left: 1.25rem; }
     var ROUNDS = '<th>Rounds' + info('One communication round per layer of AND gates (' + comma(th.and_depth) + ' per ' + (keccak() ? 'Keccak-f permutation' : S.hash + ' compression') + '), for 2-of-3') + '</th>';
     // with pruning, the Ledger's subtree; the layered key needs no sentence
     set('th-life', 'We recommend the same pruning as on the Ledger, i.e. a kept subtree of height ' + devs[0].b + ', for a lifetime of ' +
-      life1(isForest() ? th.lifetime : th.fors.lifetime) + ' signatures (' + life1(isForest() ? th.lifetime100 : th.fors.lifetime100) +
-      ' at 100 bits).');
+      life1(isForest() ? th.lifetime : th.fors.lifetime) + ' signatures' + deg(th) + '.');
     // hidden for a layered key but keeping its place, so that switching the shape does not move the page
     var thLife = document.querySelector('[data-f="th-life"]');
     thLife.style.visibility = lay_ ? 'hidden' : ''; thLife.setAttribute('aria-hidden', lay_ ? 'true' : 'false');
