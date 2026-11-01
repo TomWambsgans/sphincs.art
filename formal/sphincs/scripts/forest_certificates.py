@@ -996,6 +996,18 @@ PARAMS_BITS = {100: {
     (28, 'pruned', 8, 8): 27340,
 }}
 
+def lifetime_bits(h, shape, b=None, T=8, bits=100):
+    """The signature limit proved at `bits` bits, None if it has no certificate here."""
+    p = PARAMS_BITS.get(bits, {})
+    if shape == 'layered':
+        return p.get((h, 'layered', h, T)) or (p.get((h, 'pruned', h, 8)) if T == 8 else None)
+    return p.get((h, 'pruned', b, 8))
+
+def uniform_lifetime_bits(L, bits=100):
+    """The limit proved at `bits` bits of the uniform (layered) key of the lifetime 2^L."""
+    h, T = UNIFORM[L]
+    return lifetime_bits(h, 'layered', h, T, bits)
+
 def configs_bits(bits):
     """(h, shape, b, T, N) of every configuration at `bits` bits, in the order of `configs`"""
     out = []

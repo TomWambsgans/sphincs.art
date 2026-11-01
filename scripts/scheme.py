@@ -19,7 +19,7 @@ a grinding attempt and a counter cost one compression each, with every hash.
 
 The lifetimes are the ones proved in Lean (the PARAMS and LAYERED tables of
 formal/sphincs/scripts/forest_certificates.py and fors_certificates.py) and, for comparison, the cover
-attack they are measured against (ATTACK).
+attack they are measured against (ATTACK); the site also shows the limits proved at 100 bits (PARAMS_BITS).
 The forest's sizes and verification costs are also pinned by the Rust tests (crates/sphincs,
 `Config::verify_compressions`).
 
@@ -353,6 +353,13 @@ def proved(fts, L, h, shape, b):
     return fts.lifetime(h, shape, b), fts.attack(h, shape, b)
 
 
+def proved100(fts, L, h, shape, b):
+    """The limit proved in Lean at 100 bits of the forest (fc) or FORS (vc), None when not certified."""
+    if shape == "layered":
+        return fts.uniform_lifetime_bits(L, 100)
+    return fts.lifetime_bits(h, shape, b, bits=100)
+
+
 def site_data():
     """Every configuration (lifetime, shape, kept subtree, hash) with its figures, and the threshold and
     hardware-wallet figures, for the site."""
@@ -372,10 +379,11 @@ def site_data():
                                        coords=coords, size=size(h, shape, coords=coords), verify=C.verify(h, shape),
                                        keygen=round(C.keygen(h, shape, b)), sign=signs,
                                        grind=round(2 ** (h - b)) if shape == "pruned" else 1,
-                                       lifetime=proved_f, attack=attack_f,
+                                       lifetime=proved_f, attack=attack_f, lifetime100=proved100(fc, L, h, shape, b),
                                        fors=dict(k=ka[0], a=ka[1], size=size(h, shape, "fors", b, ka=ka),
                                                  verify=CV.verify(h, shape), sign=signs_v,
-                                                 lifetime=proved_v, attack=attack_v)))
+                                                 lifetime=proved_v, attack=attack_v,
+                                                 lifetime100=proved100(vc, L, h, shape, b))))
     for H in HASHES:
         ands = ANDS[H.name]
         for L, h, shape, b, coords, ka in configurations():
@@ -389,11 +397,11 @@ def site_data():
             alone = [C.sign(h, shape, b, 16 * 1024), CV.sign(h, shape, b, 16 * 1024)]
             alone = [base + tree for base, grind, tree in alone]
             np_ = ledger_prepared(h, H.name, [C.device_online(), CV.device_online()], alone)
-            fors_th = dict(lifetime=proved(vc, L, h, shape, b)[0],
+            fors_th = dict(lifetime=proved(vc, L, h, shape, b)[0], lifetime100=proved100(vc, L, h, shape, b),
                            prep=round(prep_v), prep_mb=prep_v * ands * BITS_PER_AND / 8 / 1e6, prep_rounds=rounds(H.name, 1 if shape == "pruned" else Q - 1),
                            ledger_prep=math.ceil(CV.ledger_prep(h, shape, b)), device_online=CV.device_online())
             out["threshold"].append(dict(hash=H.name, lt=L, h=h, shape=shape, b=b, lifetime=proved(fc, L, h, shape, b)[0],
-                                         keygen=round(keygen), prep=round(prep), grind=2**h // THRESHOLD_PREPARED,
+                                         lifetime100=proved100(fc, L, h, shape, b), keygen=round(keygen), prep=round(prep), grind=2**h // THRESHOLD_PREPARED,
                                          and_depth=and_depth(H.name), keygen_rounds=rounds(H.name, Q - 1), prep_rounds=rounds(H.name, STEPS),
                                          ledger_prep=math.ceil(ledger), device_online=C.device_online(),
                                          ledger_prepared=np_, ledger_grind=2**h // np_,
