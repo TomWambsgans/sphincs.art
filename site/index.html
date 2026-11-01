@@ -1055,8 +1055,8 @@ footer a + a { margin-left: 1.25rem; }
   function lifeOf(c) { return life1(isForest() ? c.lifetime : c.fors.lifetime); }
   // the limit proved in Lean at 100 bits, in the (i) next to a lifetime
   function deg(c) {
-    return info('100 bits up to ' + life1(isForest() ? c.lifetime100 : c.fors.lifetime100) +
-      ' signatures, [proved in Lean](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs)');
+    return info(life1(isForest() ? c.lifetime100 : c.fors.lifetime100) +
+      ' signatures still at 100 bits of security, [proved in Lean](https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs)');
   }
   function life1(n) {
     var u = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']], q = Math.pow(10, Math.floor(Math.log10(n)) - 1);
