@@ -211,7 +211,7 @@ svg .fors polygon, svg .lyr polygon { fill: none; stroke: var(--tree); stroke-wi
 .thr .cmp thead tr:first-child th { padding-bottom: 0; }
 .tables p { margin: 0 0 0.6rem; }
 
-/* The four toggles of the scheme: segmented buttons */
+/* The toggles of the scheme: segmented buttons (the hash at the bottom of the page) */
 .toggles { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.4rem 0.8rem; align-items: center; margin: 0 0 1rem; font-size: 0.99rem; }
 .toggles .sl { color: var(--muted); }
 .seg { display: inline-flex; flex-wrap: wrap; justify-self: start; border: 1px solid var(--tree); border-radius: 7px; overflow: hidden; }
@@ -221,7 +221,10 @@ svg .fors polygon, svg .lyr polygon { fill: none; stroke: var(--tree); stroke-wi
 .seg button[aria-checked="true"] { background: var(--ink); color: #fff; }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
-footer { display: flex; justify-content: space-between; gap: 2rem; margin-top: 1.5rem; color: var(--muted); }
+/* the footer: the links on the left, the hash in the middle, the versions on the right */
+footer { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 2rem; margin-top: 1.5rem; color: var(--muted); }
+footer .versions { justify-self: end; }
+.hashrow { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
 footer p { margin: 0; }
 footer a + a { margin-left: 1.25rem; }
 
@@ -241,7 +244,8 @@ footer a + a { margin-left: 1.25rem; }
   .cards td .hd { gap: 0 0.6em; flex-wrap: wrap; }
   .cards td .hd .ex { margin-left: auto; }
   .cards .note { display: block; }
-  footer { flex-direction: column; gap: 0.5rem; }
+  footer { grid-template-columns: minmax(0, 1fr); justify-items: start; gap: 0.6rem; }   /* one under the other */
+  footer .versions { justify-self: start; }
 }
 @media (max-width: 860px) {
   /* One signer: the table becomes a list, one block per device, each cell laid out on a grid in column order */
@@ -287,7 +291,6 @@ footer a + a { margin-left: 1.25rem; }
 
   /* The toggles fit the width of a phone */
   .toggles { font-size: 0.924rem; column-gap: 0.6rem; }
-  .toggles .sl.two { max-width: 4.6rem; line-height: 1.15; }   /* "FTS variant" on two lines, so the hashes stay on one */
   .seg button { padding: 0.16rem 0.4rem; }
 
   /* Threshold: small tables that fit as they are */
@@ -342,9 +345,7 @@ footer a + a { margin-left: 1.25rem; }
         <div class="seg" role="radiogroup" aria-labelledby="tl-h" data-key="lt"><button type="button" role="radio" data-val="24" aria-label="2 to the 24">2<sup>24</sup></button><button type="button" role="radio" data-val="26" aria-label="2 to the 26">2<sup>26</sup></button><button type="button" role="radio" data-val="28" aria-label="2 to the 28">2<sup>28</sup></button><button type="button" role="radio" data-val="30" aria-label="2 to the 30">2<sup>30</sup></button><button type="button" role="radio" data-val="32" aria-label="2 to the 32">2<sup>32</sup></button></div>
         <span class="sl"><span id="tl-shape">Mode</span><span class="info w dn" tabindex="0" role="button" aria-label="More information" data-tip="# Uniform&#10;Standard signing (the randomizer selects a random FTS among the 2ʰ possible ones).&#10;&#10;# Pruning&#10;Use a single, large, XMSS layer. Weak devices only construct a subtree of 2ᵇ leaves, and use pseudorandom nodes for the rest, and signing grinds until its index lands in it (An idea from [conduition](https://conduition.io/cryptography/hypertree-pruning/)). Verifier algo is unaffected.&#10;&#10;The risk of reusing a seed under different pruning parameters is fixed by deriving a second seed as H(seed ‖ parameters).&#10;&#10;Privacy: one can select the leaf indexes of the non-pruned FTS at (pseudo)random, but signing a lot will always eventually leak the pruning size. Partial remediation: keep a semi-trusted state S of the previously signed FTS, and when grinding lands on a FTS of S, accept it only with probability (2ᵇ − |S|) / (2ʰ − |S|), so that FTS repeat exactly as often as with a full tree. This essentially gives 2ᵇ⁻¹ signatures with no privacy leak. The state is semi-trusted, because an adversary controlling it can: leak the pruning size, and reduce the lifetime by a factor of 2, but nothing worse.">i</span></span>
         <div class="seg" role="radiogroup" aria-labelledby="tl-shape" data-key="shape"><button type="button" role="radio" data-val="layered">Uniform</button><button type="button" role="radio" data-val="pruned">Pruning</button></div>
-        <span class="sl" id="tl-hash">Hash</span>
-        <div class="seg" role="radiogroup" aria-labelledby="tl-hash" data-key="hash"><button type="button" role="radio" data-val="Keccak-256">Keccak-256</button><button type="button" role="radio" data-val="SHA-256">SHA-256</button><button type="button" role="radio" data-val="BLAKE2s">BLAKE2s</button></div>
-        <span class="sl two"><span id="tl-v">FTS variant</span><span class="info w dn" id="v-tip" tabindex="0" role="button" aria-label="More information" data-tip="">i</span></span>
+        <span class="sl"><span id="tl-v">FTS variant</span><span class="info w dn" id="v-tip" tabindex="0" role="button" aria-label="More information" data-tip="">i</span></span>
         <div class="seg" role="radiogroup" aria-labelledby="tl-v" data-key="v"><button type="button" role="radio" data-val="fors">FORS</button><button type="button" role="radio" data-val="forest">WOTS forest</button></div>
       </div>
       <div class="scroll">
@@ -942,6 +943,7 @@ footer a + a { margin-left: 1.25rem; }
 
 <footer>
   <p><a href="https://github.com/TomWambsgans/sphincs.art/releases/download/doc-latest/leanSPHINCS.pdf">Note</a><a href="https://github.com/TomWambsgans/sphincs.art/tree/main">Code</a><a href="https://github.com/TomWambsgans/sphincs.art/tree/main/formal/sphincs">Proofs</a></p>
+  <div class="hashrow"><span class="sl" id="tl-hash">Hash</span><div class="seg" role="radiogroup" aria-labelledby="tl-hash" data-key="hash"><button type="button" role="radio" data-val="Keccak-256">Keccak-256</button><button type="button" role="radio" data-val="SHA-256">SHA-256</button><button type="button" role="radio" data-val="BLAKE2s">BLAKE2s</button></div></div>
   <div class="versions" aria-label="Versions"><a class="ver" href="/v1/">v1</a><span class="ver cur" aria-current="page">v2</span><span class="ver info" tabindex="0" role="button" aria-label="v3?" data-tip="Feedback welcome, please open an issue in [TomWambsgans/sphincs.art](https://github.com/TomWambsgans/sphincs.art/issues).">v3?</span></div>
 </footer>
 
